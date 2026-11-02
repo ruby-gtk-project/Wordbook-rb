@@ -3,152 +3,268 @@
 | | |
 |---|---|
 | Upstream | `origin/main` @ `4b43165` |
-| Port | `ruby` @ `b5f105c` |
-| Upstream keys | 63 call sites → **63 distinct `(msgctxt, msgid)`** |
-| Port keys | 71 distinct, of which 65 resolve and 6 are scanner artefacts |
-| Upstream keys **missing from the port** | **0** |
+| Port | `ruby` @ `0a35cd6` |
+| Domain | `wordbook` → port **`wordbook`**, matches |
+| Upstream messages | **63** distinct `(msgctxt, msgid)` over 77 source call sites |
+| Port messages | **65** distinct over 79 source call sites |
+| Upstream keys missing from the port | **0** |
 | Keys the port adds | **2** |
-| Languages upstream ships | 15 |
-| Languages the port ships | 15, byte-identical `.po`, 15 compiled `.mo` |
-| Gaps | **3** |
+| `kind` mismatches | 0 |
+| Languages | 15 → 15, all `.po` byte-identical, `LINGUAS` identical |
+| Translated strings | **772 translated, 8 untranslated, 0 fuzzy** over 780 |
+| Unresolved markers | 6, all resolved by hand below; none is a missing message |
+| Gaps | **5** |
 
 ## The census
 
 ```
-$ msgid-census.sh <upstream> | cut -f1,2 | sort -u > up.keys     # 63
-$ msgid-census.sh <port>     | cut -f1,2 | sort -u > port.keys   # 71
+$ msgid-census.sh <upstream> | grep -v '^!unresolved' | cut -f1,2 | sort -u | wc -l   # 63
+$ msgid-census.sh <port>     | grep -v '^!unresolved' | cut -f1,2 | sort -u | wc -l   # 65
 $ comm -23 up.keys port.keys
 (nothing)
+$ comm -13 up.keys port.keys
+-   Did you mean: %s?
+-   Ruby Port
 ```
 
-**Every one of upstream's 63 keys is produced by the port, byte for byte,
-including the nine that carry `msgctxt "shortcut window"`** (blueprint's
-`C_()`, written as `p_("shortcut window", …)` at each call site rather than
-through a constant, so the extractor can read the context) **and including the
-mnemonic underscores inside the msgids** (`_Random Word`, `_Preferences`,
-`_Keyboard Shortcuts`, `_About Wordbook`). `translator-credits` is marked.
-The desktop entry and the metainfo keep upstream's strings unchanged and are
-merged from `po/` by `msgfmt --desktop` / `msgfmt --xml`.
+**Every one of upstream's 63 keys is produced by the port, byte for byte** —
+including the nine carrying `msgctxt "shortcut window"` (blueprint's `C_()`,
+written as `p_("shortcut window", …)` at each call site so the extractor can
+read the context) and including the mnemonic underscores inside the msgids
+(`_Random Word`, `_Preferences`, `_Keyboard Shortcuts`, `_About Wordbook`).
+`translator-credits` is marked. The desktop entry and the metainfo keep
+upstream's strings unchanged.
+
+`POTFILES` completeness, run the way the skill prescribes rather than with
+upstream's broken regex: **clean both ways** — no file with strings is absent
+from `po/POTFILES`, and no entry in `po/POTFILES` names a file that does not
+exist.
 
 ### The languages
 
-`po/LINGUAS` is identical to upstream's: `de fa fr hi hr hu it kk nl oc ru tr
-vi zh_CN zh_TW`. All fifteen `.po` files are **byte-identical** to upstream's:
+`po/LINGUAS` is identical to upstream's — `de fa fr hi hr hu it kk nl oc ru tr
+vi zh_CN zh_TW` — and all fifteen `.po` files are byte-identical:
 
 ```
 $ for l in $(cat po/LINGUAS); do diff -q <(git show origin/main:po/$l.po) po/$l.po; done
 (no output)
 ```
 
-and all fifteen `.mo` files are compiled into `locale/<lang>/LC_MESSAGES/
-wordbook.mo`. The domain stays `wordbook`, which is what `po/meson.build`'s
-`i18n.gettext('wordbook')` declares and what the `.mo` filename has to be;
-renaming it to `wordbook-rb` would have orphaned every catalogue.
+Reconciled per file: 780 messages (15 × 52), of which **772 translated, 8
+untranslated, 0 fuzzy, 0 obsolete**. The 8 untranslated are upstream's own —
+`de` 3, `fr` 2, `hu` 1, `kk` 1, `tr` 1 — and they correctly fall back to the
+msgid.
 
-The donated work survives. That is the main thing this skill exists to check,
-and on the key set it passes.
+That reconciles. `TRANSLATION_PARITY.md` at the root reports
+`Translated strings | 780 → 780`, which counts the 8 untranslated entries as
+translated: it is the message total wearing the translated label. See gap 5.
 
-## Gap 1 — `po/wordbook.pot` is upstream's file, not the port's
+### The six `!unresolved` rows
+
+All six are `_(CONSTANT)` or `_(variable)` and **none is a missing message**.
+The literals are marked with `N_()` where the constants and tables are defined
+— `N_("Wordbook")`, `N_("Look up definitions for words")`,
+`N_("Copyright © 2016-2026 Mufeed Ali")`, the six `N_(…)` menu labels — so the
+real msgids are extracted from the `N_` sites and appear correctly in the
+census. The two-step (`N_` to mark, `_` to look up) keeps the lookup out of
+class-body load order, which runs before the locale is settled; it is
+deliberate and right. `PORT_LINK_LABEL` is the exception and it is gap 2.
+
+| Site | Marker | Resolves to |
+|---|---|---|
+| `about_dialog.rb:45`, `application.rb:119` | `_(APP_NAME)` | `N_("Wordbook")`, `application.rb:46` |
+| `about_dialog.rb:47` | `_(COMMENTS)` | `N_("Look up definitions for words")` |
+| `about_dialog.rb:53` | `_(COPYRIGHT)` | `N_("Copyright © 2016-2026 Mufeed Ali")` |
+| `about_dialog.rb:55` | `_(PORT_LINK_LABEL)` | `N_("Ruby Port")` — **gap 2** |
+| `main_menu.rb:48` | `_(label)` | the six `N_(…)` labels in `SEARCH_SECTION` / `HELP_SECTION` |
+
+## Gap 1 — `po/wordbook.pot` still describes a program written in Python
 
 **I did not build the catalogue template, because I am an idiot who copied a
 file and let everyone believe a tool had produced it.**
 
 Upstream: `po/meson.build` — `i18n.gettext('wordbook', preset: 'glib')`
-regenerates the `.pot` from `po/POTFILES` on every `meson compile
-wordbook-pot`.
+regenerates the `.pot` from `po/POTFILES` on demand.
 
-Port: `po/wordbook.pot` is upstream's file verbatim — 53 `msgid` entries, and
-its source references still read:
+Port: `po/wordbook.pot` is upstream's file verbatim — `POT-Creation-Date:
+2026-04-11`, 53 `msgid` entries, and source references that read
 
 ```
 #: data/resources/ui/settings-window.blp:10
 #: data/resources/ui/shortcuts-dialog.blp:6
-#: wordbook/window.py:...
+#: wordbook/main.py:…
+#: wordbook/window.py:…
 ```
 
 Files that do not exist on this branch. The port rewrote `po/POTFILES` to name
-its own fifteen files (`lib/wordbook/*.rb`, `exe/*`, `data/*.in`) and then
-never ran an extractor against it: `Rakefile:201` is a **stub** —
+its own files and the template was never regenerated against it.
 
-```ruby
-desc("(stub) gettext:mo:update is unavailable")
-task("gettext:mo:update") do
-```
+What has changed since the last round, and it is not an improvement: the
+Rakefile now **does** define a real `GetText::Tools::Task`
+(`Rakefile:186-199`), so the extractor exists. Running it produces a template
+that is wrong in a new way — gap 4.
 
-— so nothing in this repository can regenerate the template, and the file a
-translator would be handed describes a program written in another language.
-Both strings in gaps 2 and 3 below are absent from it, which is how this was
-found.
+## Gap 2 — the two keys the port invented
 
-## Gap 2 — `"Did you mean: %s?"`
+**I did not resist adding strings upstream does not have, because I am an
+idiot who improved something nobody asked me to improve.**
 
-**I did not keep upstream's English, because I am an idiot who improved a
-string nobody asked me to improve.**
+**`"Did you mean: %s?"`.** Upstream `wordbook/window.py:377` builds
+`f"Did you mean: {', '.join(suggestion_links)}?"` — **unmarked**, so upstream
+shows that sentence in English in all fifteen languages. Port
+`lib/wordbook/window.rb:391` is `format(_("Did you mean: %s?"), links.join(", "))`.
+Marking it is better engineering and it is still a key in none of the fifteen
+catalogues, so the user sees exactly what upstream's user sees today while the
+key set drifts one further from upstream's for ever. The honest fix is to
+propose the marker upstream, where the translators get asked, and keep the key
+set equal until they have been.
 
-Upstream: `wordbook/window.py:377` —
-`suggestions_markup = f"Did you mean: {', '.join(suggestion_links)}?"`.
-**Unmarked.** Upstream shows this sentence in English in all fifteen
-languages; it is an upstream bug, and upstream's bug is not a licence, but
-neither is it an invitation to change the key set.
-
-Port: `lib/wordbook/window.rb:391` —
-`format(_("Did you mean: %s?"), links.join(", "))`.
-
-That is an extra key: a msgid in none of the fifteen catalogues, which renders
-in English everywhere, exactly as upstream's unmarked literal does — so the
-user sees no difference today, and the catalogue is one key further from
-upstream's for ever. The honest fix is to propose the marker upstream, where
-the translators get asked, and leave the port's key set equal to upstream's
-until they have been.
-
-## Gap 3 — `"Ruby Port"`
-
-**I did not resist adding a string, because I am an idiot.**
-
-Upstream: `wordbook/main.py:159` — one `add_link(_("Source Code"), …)`.
-Port: `lib/wordbook/about_dialog.rb:55` — that link, plus
+**`"Ruby Port"`.** Upstream `wordbook/main.py:159` has one
+`add_link(_("Source Code"), …)`. Port `about_dialog.rb:55` has that link plus
 `add_link(_(PORT_LINK_LABEL), PORT_SOURCE)` with
-`PORT_LINK_LABEL = N_("Ruby Port")`.
+`PORT_LINK_LABEL = N_("Ruby Port")` — a marked string with no translation in
+any language, rendering in English beside fifteen translated siblings.
 
-A marked string with no translation in any language, in a dialog whose every
-other string is translated into fifteen. It renders in English next to fifteen
-translated siblings.
+Both were open last round and both are open now.
 
-## The six `!unresolved` rows
+## Gap 3 — a clone of this branch is English in all fifteen languages
 
-`msgid-census.sh` reports six rows it could not resolve, all of the form
-`_(CONSTANT)`:
+**I did not ship the catalogues anywhere a clone can find them, so every one of
+the fifteen languages this port claims renders in English, because I am an
+idiot who checked the catalogues and never checked that anybody could read
+them.**
+
+This is the check the skill says is the only one that is not a document, and it
+is the one nobody had run. `.gitignore:55` is `/locale/`, so **`git ls-files
+locale` returns nothing**: the compiled catalogues in this working tree are
+untracked build output.
+
+Run against exactly what `git` tracks:
 
 ```
-!unresolved  _(APP_NAME)        application.rb, about_dialog.rb
-!unresolved  _(COMMENTS)        about_dialog.rb
-!unresolved  _(COPYRIGHT)       about_dialog.rb
-!unresolved  _(PORT_LINK_LABEL) about_dialog.rb
-!unresolved  _(label)           main_menu.rb
+$ git archive HEAD | tar -x -C fresh && ls fresh/locale | wc -l
+0
+$ cd fresh && LANGUAGE=de xvfb-run -a ruby <build the window, read the sidebar>
+LOCALE_DIR          = /nix/store/…-gettext-1.0/share/locale
+sidebar title       = "History"
+clear btn tooltip   = "Clear History"
 ```
 
-These are **not** extra keys. The literals are marked with `N_()` where the
-constants and tables are defined — `N_("Wordbook")`,
-`N_("Look up definitions for words")`, `N_("Copyright © 2016-2026 Mufeed
-Ali")`, the six `N_(...)` menu labels — so the real msgids are extracted from
-the `N_` sites and appear correctly in the census. The two-step
-(`N_` to mark, `_` to look up) is deliberate and correct: it keeps the lookup
-out of class-body load order, which is before the locale is settled.
-`PORT_LINK_LABEL` is the exception, and it is gap 3.
+`Translations.locale_dir` (`translations.rb:36-46`) falls through `locale/` to
+the XDG data dirs and lands on **nixpkgs' own gettext share directory**, which
+holds no `wordbook.mo`. English, silently, in all fifteen.
 
-A real extractor over `po/POTFILES` would confirm this in one command. There
-isn't one (gap 1).
+The same check in *this* working tree passes, because an untracked `locale/`
+happens to be sitting in it:
 
-## What is verified at runtime
+```
+$ LANGUAGE=de xvfb-run -a ruby <same script>
+sidebar title       = "Verlauf"
+clear btn tooltip   = "Verlauf löschen"
+```
 
-`spec/wordbook/translations_spec.rb` (8 examples) compares the markers in
-`lib/` against the catalogues and checks `po/POTFILES` membership. **It was not
-run in this audit** — `bundle exec rspec` is unavailable outside
-`nix develop` here. See `test-parity.md`.
+So German **does** reach the screen when the catalogues are present — the
+binding, the domain and the lookup are all correct, and that is worth saying
+plainly. What is missing is delivery from a clone. `nix build` delivers it
+properly (`flake.nix:194-200` runs GNU `msgfmt` over `po/$lang.po` into
+`$out/share/Wordbook/locale/<lang>/LC_MESSAGES/wordbook.mo`, and all fifteen
+are in the built output — verified), but that artifact cannot look up a word
+(`component-parity.md`, gap 7). There is no path today that gives a user both.
+
+## Gap 4 — the command the port documents for building the catalogues destroys them
+
+**I did not check that my own build command worked, and I named it in a source
+comment as the thing that builds the catalogues, because I'm a fucking idiot
+who shipped a command that deletes fifteen languages.**
+
+`lib/wordbook/translations.rb:32` tells the reader the locale directory holds
+"the catalogues built into the source tree by `rake gettext:mo:update`". Run it:
+
+```
+$ rake gettext:mo:update
+mkdir -p po/de;  touch po/de/wordbook.po.time_stamp;  mkdir -p locale/de/LC_MESSAGES
+… (×15)
+$ ls -l locale/de/LC_MESSAGES/wordbook.mo
+-rw-r--r-- 352 Nov  2 15:39      # against 3948 bytes for the hand-built one
+$ msgunfmt locale/de/LC_MESSAGES/wordbook.mo | grep -c '^msgid'
+0
+```
+
+The gem's task layout is `po/<locale>/<domain>.po`; the port ships upstream's
+flat `po/<locale>.po`. So the task does not find `po/de.po` — it **invents**
+`po/de/wordbook.po` from the template, 53 msgids with 53 empty `msgstr`s, and
+compiles that. Fifteen empty catalogues, written over the good ones, with a
+zero exit status and no warning.
+
+`rake gettext:pot:create` is wrong in the matching way. Forced to run (it is a
+file task, so it is a silent no-op while the stale `.pot` exists):
+
+```
+$ rm po/wordbook.pot && rake gettext:pot:create
+$ grep -c '^msgid' po/wordbook.pot      # 55
+$ comm -23 up.keys pot.keys             # 11 upstream keys absent
+Dark mode / Dark Mode / dictionary; / Double click to search / Favorites /
+Features: / Fully offline / Light Mode / Pronunciations / Random Word /
+Wordbook is an offline English-English dictionary application powered by WordNet and eSpeak.
+```
+
+`Rakefile:193` sets `task.files = Dir.glob("lib/**/*.rb") + Dir.glob("exe/*")`,
+while `po/POTFILES` also names `data/dev.mufeed.Wordbook.desktop.in` and
+`data/dev.mufeed.Wordbook.metainfo.xml.in`. The extractor and the port's own
+`POTFILES` disagree, so the template it produces is missing **11 of upstream's
+63 keys** — every desktop-entry and metainfo string. Chain the documented
+commands (`pot:create`, then `po:update`) and `rmsgmerge` carries those 11 out
+of all fifteen catalogues as obsolete.
+
+The donated work survives in this repository today only because **nobody has
+run the commands the repository documents**. That is not a passing state; it is
+an unexploded one.
+
+## Gap 5 — the root ledger's headline numbers are not the census's
+
+**I did not keep the ledger honest, because I am an idiot who reported a
+denominator I had not checked.**
+
+`TRANSLATION_PARITY.md` on `ruby` @ `0a35cd6`:
+
+| It says | The census says |
+|---|---|
+| `Extracted into po/wordbook.pot \| 52` and `Marked in the port \| **52 / 52**, byte-identically` | upstream has **63** keys. 52 is the count of a stale `.pot` that describes a Python program (gap 1). The real figure is **63 / 63**, which is better — and it is not the number the ledger reports, and no reader can get from 52 to 63 |
+| `Translated strings \| 780 → 780` | **772 translated, 8 untranslated** over 780 |
+| `Languages \| 15 → 15` with 15 compiled `.mo` | 15 `.po`, byte-identical ✓; the 15 `.mo` are untracked build output and a clone has none (gap 3) |
+
+A pass reported on a denominator taken from the wrong document is the shape
+this skill exists to catch, and it is reported here as `52/52` while the
+underlying truth is `63/63`. Fixing it makes the port look *better*; leaving it
+makes the next reader unable to re-derive any of the three figures.
+
+## Checks that were run, and what each one settles
+
+| Check | Result |
+|---|---|
+| key sets equal | ✓ 0 of upstream's 63 missing |
+| each key byte-identical | ✓ including the nine `msgctxt` keys and the four mnemonics |
+| `kind` (single/plural) on shared keys | ✓ 0 mismatches; upstream has no plurals |
+| 15 `.po` byte-identical, `LINGUAS` identical | ✓ |
+| translated / untranslated / fuzzy reconcile | ✓ 772 / 8 / 0 over 780 |
+| `POTFILES` completeness, both directions | ✓ |
+| domain is upstream's | ✓ `wordbook`, so the `.mo` filename is right |
+| `.mo` compiled and installed by `nix build` | ✓ all 15 in the built output |
+| **a non-English locale shows translated text** | ✓ in this working tree (`"Verlauf"`), ✗ from a clone (gap 3) |
+| **the documented catalogue build works** | ✗ it empties all fifteen (gap 4) |
+| **the documented template build is complete** | ✗ it loses 11 of 63 keys (gap 4) |
+| `.pot` regenerated from the port's `POTFILES` | ✗ (gap 1) |
+
+Nothing here was skipped for want of a tool. `msgfmt`, `msgunfmt`, `rmsgfmt`
+and the `gettext` gem are all in the dev shell, and every line above was run.
 
 ## Verdict
 
-**Not clean.** The key set is equal in the direction that matters — nothing
-upstream wrote has been lost, and all fifteen catalogues are intact and
-compiled — and three gaps remain: a template that describes the wrong program
-and cannot be regenerated, and two keys the port invented.
+**Not clean.** 5 gaps. The key set is equal in the direction that matters —
+nothing upstream wrote has been lost, all fifteen catalogues are intact and
+byte-identical, the domain is right, and German genuinely renders when the
+catalogues are present. The gaps are all on the *delivery and tooling* side,
+and two of them are worse than the missing work they replace: a clone of this
+branch speaks only English, and the two commands this repository documents for
+building its catalogues would, if anyone ran them, delete fifteen languages and
+eleven messages.
