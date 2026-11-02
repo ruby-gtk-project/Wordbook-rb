@@ -2,83 +2,117 @@
 
 | | |
 |---|---|
-| Upstream | `main` @ `4b43165` |
-| Port | `ruby` @ `a73a55a` |
-| Upstream tests | **0** |
-| Ported | 0 |
-| Gaps | 0 |
-| Test command | `bundle exec rspec` (via `rake spec` / `turbo_tests2`) — **0 examples** |
+| Upstream | `origin/main` @ `4b43165` |
+| Port | `ruby` @ `b5f105c` |
+| Upstream tests | **3** |
+| Ported | **0** |
+| Gaps | **3** |
+| Port's own examples | 118 (7 spec files) |
 
-Upstream has no test suite. Verified:
+## The previous audit of this file was wrong
 
+`.reports/test-parity.md` at `a73a55a` reported **0 upstream tests** and
+declared parity "met trivially", citing among other things "no `test` target in
+`meson.build`". That claim was checked against the top-level `meson.build`
+only. `data/meson.build` declares three:
+
+```meson
+# data/meson.build:35-38
+desktop_utils = find_program('desktop-file-validate', required: false)
+if desktop_utils.found()
+  test('Validate desktop file', desktop_utils, args: [desktop_file.full_path()])
+endif
+
+# data/meson.build:57-61
+appstreamcli = find_program('appstreamcli', required: false)
+if appstreamcli.found()
+  test('Validate appstream file', appstreamcli, args: ['validate', '--no-net', appstream_file.full_path()])
+endif
+
+# data/meson.build:75-79
+compile_schemas = find_program('glib-compile-schemas', required: false)
+if compile_schemas.found()
+  test('Validate schema file', compile_schemas, args: ['--strict', '--dry-run', meson.current_source_dir()])
+endif
 ```
-$ test-census.sh <upstream> | wc -l
-0
-```
 
-and by hand: no `test/` or `tests/` directory, no `def test_*`, no `unittest`,
-no `pytest`, no `conftest.py`, no `[tool.pytest]` or `testpaths` in
-`pyproject.toml` or `setup.cfg`, no `test` target in `meson.build`,
-`meson_options.txt` or the `justfile` (which has `setup`,
-`local-configure`, `develop-configure`, `local-run`, `install`, `clean`, `run`
-and nothing else), and no test job in `.github/workflows/CI.yml` beyond lint.
-`setup.cfg`'s `[pydocstyle] match = '(?!test_).*\.py'` names a convention
-nobody used.
+`.github/workflows/CI.yml:26` passes `run-tests: "true"` to
+`flatpak/flatpak-github-actions/flatpak-builder@v6`, which runs
+`meson test`. These three are what upstream's CI runs on every push, and they
+are the upstream suite.
 
-Parity is **0/0 and is met trivially.**
+`test-census.sh` cannot see them — it knows GLib `Test.add_func`, unittest,
+pytest, Jasmine `it(...)`, Rust `#[test]` and Ruby `test_*`/`it`/`check`, and
+not meson `test()`. The skill says to cross-check the census against the build
+file's test list. The last audit ran the script and did not do the cross-check,
+reported a 0 it had not verified, and spent the rest of the document on how
+untested the port is — which was true, and was not the parity finding.
 
-**The port therefore inherits no safety net.** There is no upstream test that
-pins the search-term cleanup charsets, the IPA→espeak phoneme table, the
-50-entry history cap, the 20-entry load truncation, the lemma grouping, the
-pronunciation-variety fallback, the zstd extraction's atomic rename, or any of
-the D-Bus search-provider methods — because upstream never wrote one. Every
-behaviour in this port was reimplemented from reading, and nothing anywhere
-checks that the reading was right.
+## The census
 
-## Extra
+| # | Upstream test | File:line | Property pinned | Port | Verdict |
+|---|---|---|---|---|---|
+| 1 | `Validate desktop file` | `data/meson.build:36` | the installed `.desktop` — after `@app-id@` substitution and after `i18n.merge_file` has merged all fifteen translations into it — is a valid desktop entry. Catches a broken `Icon=`, a bad `Categories=`, a malformed translated `Name[xx]` | none | **gap** |
+| 2 | `Validate appstream file` | `data/meson.build:58` | the installed `metainfo.xml` — substituted and translation-merged — passes `appstreamcli validate --no-net`. Catches a bad `<id>`, a missing `<launchable>`, a malformed `<release>`, a `<screenshot>` without an `<image>`. An invalid metainfo means the app does not appear in Software | none | **gap** |
+| 3 | `Validate schema file` | `data/meson.build:76` | `glib-compile-schemas --strict --dry-run` accepts `data/`. Catches a schema that would make `glib-compile-schemas` fail at install time on a user's machine | none, and nothing to validate — the port ships no schema (`component-parity.md`, gap 7) | **gap** |
 
-None. This is the finding.
+Three upstream tests, three gaps, a bijection with nothing on the port side.
 
-The port carries a complete RSpec harness and does not use it:
+The port's install path makes the first two *more* necessary than upstream's,
+not less: `flake.nix:180-186` runs the same `msgfmt --desktop` /
+`msgfmt --xml` merge that meson does, by hand, into files whose `@app-id@`
+was replaced with a literal by hand. Both substitutions and both merges are
+unchecked.
 
-| File | State |
+### Behaviour owed, per gap
+
+1. a user's launcher shows the app with the right name, icon and translated
+   name, in every one of the fifteen languages;
+2. GNOME Software shows the app, with its description, release notes and
+   screenshots, in every one of the fifteen languages;
+3. installing the app does not break the system's compiled schema cache.
+
+Closing all three is cheap and needs no display: three shell invocations over
+built files, as a `rake` task and a CI job. `desktop-file-validate`,
+`appstreamcli` and `glib-compile-schemas` are all already in the Nix closure
+(`flake.nix` uses `glib.dev` at line 208).
+
+## Extra — the port's own suite
+
+Not parity rows; upstream owes them nothing. Recorded because the suite is new
+since the last audit and the last audit's headline ("zero spec files") is now
+false:
+
+| File | Examples |
+|---|---:|
+| `spec/wordbook/base_spec.rb` | 36 |
+| `spec/wordbook/settings_spec.rb` | 19 |
+| `spec/wordbook/database_manager_spec.rb` | 16 |
+| `spec/wordbook/shell_search_provider_spec.rb` | 15 |
+| `spec/wordbook/application_spec.rb` | 13 |
+| `spec/wordbook/espeak_spec.rb` | 11 |
+| `spec/wordbook/translations_spec.rb` | 8 |
+| | **118** |
+
+**Unverified in this checkout.** `bundle exec rspec` fails here with
+`bundler: command not found: rspec` — the gems are not installed outside
+`nix develop`, so this audit did not execute a single one of the 118. The last
+spec run anyone recorded is `FINDINGS.md` 5's "the other 90 examples run and
+pass", which is 28 examples out of date; whatever was added since has never
+been shown to pass in any document in this repository.
+
+What the 118 do *not* cover, and what therefore has still never been executed:
+
+| Never executed | Why |
 |---|---|
-| `spec/spec_helper.rb` | present (39 lines, `kettle-test` bootstrap) |
-| `spec/README.md` | present |
-| `spec/**/*_spec.rb` | **zero files** |
-| `.rspec`, `.rubocop_rspec.yml`, `.simplecov`, `gemfiles/modular/rspec.gemfile`, `gemfiles/modular/coverage.gemfile`, `bin/turbo_tests2` | all present and configured |
+| every widget in `lib/` — 11 units, ~2,900 lines | `require "gtk4"` raises `Gtk::InitError` here (`FINDINGS.md` 5); `spec/wordbook/application_spec.rb` and `shell_search_provider_spec.rb` cannot even load |
+| the SQLite reads in `base.rb:96-257` against a real `wn` database | the port ships no database (`component-parity.md`, gap 6), so there is nothing to read |
+| `Utils.set_accessible_label`, `compute_bounds`, `set_pointing_to`, `Gtk::Settings#gtk_xft_dpi`, `focus_widget=` | read out of the Gtk-4.0 typelib, never called |
 
-So `bundle exec rspec` reports 0 examples, 0 failures, and the CI that runs it
-is green. 4,421 lines of `lib/` and `exe/` — including a 970-line window, a
-530-line WordNet layer with a hand-written SQLite schema reader, a hand-written
-Levenshtein/LCS ratio standing in for `rapidfuzz`, and a hand-written option
-parser standing in for `GLib.OptionEntry` — have never been executed by
-anything in this repository.
+`.claude/skills/ruby-gtk-testing` with `scripts/gtk_driver.rb` is installed and
+unused. `CLAUDE.md` says to use it "before claiming any GTK change works".
 
-`CLAUDE.md` says: *"ruby-gtk-testing — run the app headlessly and drive its UI
-… Use it before claiming any GTK change works. `ruby -c` and a successful
-`require` prove nothing about a UI."* The skill is installed at
-`.claude/skills/ruby-gtk-testing/` with a driver at `scripts/gtk_driver.rb`.
-Nothing in the port uses it, and in this checkout the port cannot even be
-loaded: `require "gtk4"` raises `LoadError` outside `nix develop`.
+## Verdict
 
-Parity is met. The port is untested. Both sentences are true and the second one
-is the one that matters, so it is written here rather than left as an
-implication.
-
-## Behaviour owed by a suite that does not exist
-
-Not parity rows — upstream owes these nothing. Listed because `## Extra` would
-otherwise be an empty section on a port where the absence of tests is the
-largest single risk, and because these are the places where the port
-reimplemented an algorithm rather than a call:
-
-| Behaviour | Where the port reimplements it |
-|---|---|
-| the `rapidfuzz` QRatio score, as an LCS ratio | `lib/wordbook/base.rb:471-530` |
-| the pydantic validators (accent fallback, history truncation) | `lib/wordbook/settings.rb:226` |
-| the `wn` package's SQLite schema reads | `lib/wordbook/base.rb:165-245` |
-| the `bisect`-over-casefold completion ranking | `lib/wordbook/window.rb:549-581` |
-| the four `GLib.OptionEntry`s, hand-parsed | `lib/wordbook/application.rb:160-180` |
-| the zstd extraction and old-version pruning | `lib/wordbook/database_manager.rb` |
-| the IPA→espeak phoneme substitution table | `lib/wordbook/espeak.rb:92` |
+**Not clean.** 0 of 3 upstream tests ported, and the previous report said
+0 of 0.
