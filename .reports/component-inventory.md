@@ -37,6 +37,10 @@ the existing `lib/wordbook/application.rb`).
 | `data/search_provider.in`, `data/dev.mufeed.Wordbook.SearchProvider.ini` | GNOME Shell SearchProvider2 |
 | `data/resources/style.css` | 13 app CSS classes |
 | `data/dev.mufeed.Wordbook.gschema.xml.in` | **empty schema** — no GSettings keys at all |
+| `data/dev.mufeed.Wordbook.desktop.in.in` | the desktop entry — name, comment, `Categories`, the translated `Keywords=dictionary;`, `X-Purism-FormFactor` |
+| `data/dev.mufeed.Wordbook.metainfo.xml.in.in` | the AppStream metainfo — summary, the feature list GNOME Software shows, screenshots, release notes, OARS rating |
+| `data/icons/*.svg` | four icons: the app icon, the `-symbolic` one the welcome `Adw.StatusPage` draws, and the Devel and Source profile icons |
+| `Wordbook.doap` | GNOME project metadata (name, homepage, maintainer, `programming-language`) |
 | `po/` | 15 languages, `po/POTFILES` covers the three `.blp` files plus `main.py`, `window.py`, `settings_window.py` |
 
 ## Port status — every component against `lib/` on `ruby`
@@ -306,6 +310,10 @@ no gresource).
 | `wordbook/utils.py` | `lib/wordbook/utils.rb` | config/data paths, levelled logging (`--verbose`) |
 | `wordbook/constants.py` | `lib/wordbook/constants.rb` | `POS_MAP`, WordNet lexicon id, search-term cleanup/replace charsets |
 | `data/search_provider.in` + `.SearchProvider.ini` | `lib/wordbook/shell_search_provider.rb` | `org.gnome.Shell.SearchProvider2` D-Bus service: GetInitialResultSet / GetSubsearchResultSet / GetResultMetas / ActivateResult / LaunchSearch, activating the app with `--look-up` |
+| `data/dev.mufeed.Wordbook.desktop.in.in` | `data/dev.mufeed.Wordbook.desktop.in` | the launcher entry. Upstream is two-stage (`.in.in`: meson substitutes `@app-id@`, then `msgfmt --desktop` merges `po/`); the port collapses that to one `.in` and does both steps in `rake install:data`, which is also what upstream's first meson test (`desktop-file-validate`) checks |
+| `data/dev.mufeed.Wordbook.metainfo.xml.in.in` | `data/dev.mufeed.Wordbook.metainfo.xml.in` | what GNOME Software shows. Same two-stage → one-stage collapse, merged with `msgfmt --xml` against the metainfo ITS rules; validated by `rake validate:data` (upstream's `appstreamcli validate` test) |
+| `data/icons/*.svg` | `data/icons/*.svg` | carried across unchanged. The `-symbolic` icon is a user-facing component — it is the art on the welcome status page; `dev.mufeed.Wordbook.Source.svg` is still installed by nothing on either the port's stable or devel profile |
+| `Wordbook.doap` | `Wordbook.doap` | ported with `programming-language` switched to Ruby |
 
 ## Blockers and open questions
 
