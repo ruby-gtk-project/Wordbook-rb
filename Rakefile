@@ -553,6 +553,20 @@ namespace :install do
     )
     sh("glib-compile-schemas", File.join(share, "glib-2.0/schemas"))
 
+    # The dictionary, when `rake wn:db` has built one. Upstream installs it
+    # into pkgdatadir — <datadir>/wordbook — which is where
+    # Wordbook::DatabaseManager.candidates looks for it
+    # (data/meson.build:4-16). It is optional here for the same reason it is
+    # optional upstream: the archive is a 60 MB build product, not a file in
+    # the tree, and `-Dinstall_wn_db=false` is upstream's way of installing
+    # without one.
+    Dir["data/wn-*.db.zst"].each do |archive|
+      File.join(share, "wordbook").then do |dir|
+        FileUtils.mkdir_p(dir)
+        FileUtils.cp(archive, File.join(dir, File.basename(archive)))
+      end
+    end
+
     # The compiled catalogues, where bindtextdomain's last candidate looks for
     # them. `rake locale` is what builds them.
     Rake::Task[:locale].invoke
@@ -569,5 +583,25 @@ namespace :install do
         end
       end
     end
+  end
+end
+
+### THE WORDNET DATABASE
+# Upstream builds the dictionary itself as a meson `custom_target` gated on
+# `-Dinstall_wn_db` (data/meson.build:4-16): scripts/generate-wn-db.py
+# downloads the Open English WordNet lexicon, loads it with the vendored `wn`
+# package and writes `wn-<version>.db.zst` into pkgdatadir. The port's
+# equivalent is exe/wordbook-generate-db — Wordbook::DatabaseBuilder — and this
+# task is the `custom_target`: one command, the default output name
+# Wordbook::DatabaseManager hunts for, and `install:data` picking it up.
+namespace :wn do
+  desc "Build data/wn-<version>.db.zst from the Open English WordNet lexicon (downloads ~13 MB)"
+  task :db do
+    sh(
+      RbConfig.ruby,
+      "-Ilib",
+      "exe/wordbook-generate-db",
+      *ENV.fetch("WN_DB_ARGS", "").split,
+    )
   end
 end

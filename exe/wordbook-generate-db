@@ -1,0 +1,106 @@
+#!/usr/bin/env ruby
+# frozen_string_literal: true
+
+# Builds the compressed WordNet database the app ships, the port of upstream's
+# scripts/generate-wn-db.py. Upstream's meson build runs it as a custom_target
+# gated on `-Dinstall_wn_db` (data/meson.build:4-16); in this port it is run by
+# hand or by `rake wn:db`, and its default output is the file name
+# Wordbook::DatabaseManager looks for in <datadir>/wordbook.
+#
+#   wordbook-generate-db                      # download, build, compress
+#   wordbook-generate-db --source-file x.gz   # build from a local lexicon
+#   wordbook-generate-db --output data/wn.db.zst --compression-level 19
+#
+# It needs the `zstd` program, as the app does to unpack the result.
+
+require "optparse"
+require "tmpdir"
+
+require "wordbook/database_builder"
+require "wordbook/lexicon_download"
+
+options = {
+  compression_level: Wordbook::DatabaseBuilder::DEFAULT_COMPRESSION_LEVEL,
+  output:            Wordbook::DatabaseBuilder.default_output,
+  source_file:       nil,
+}
+
+OptionParser.new do |parser|
+  parser.banner = "Usage: wordbook-generate-db [options]"
+  parser.on("--compression-level LEVEL", Integer, "Zstd level 1-22 (default: 15)") do |level|
+    options[:compression_level] = level
+  end
+  parser.on("--source-file PATH", "Path to a local lexicon file (XML or XML.GZ)") do |path|
+    options[:source_file] = path
+  end
+  parser.on("--output PATH", "Output path for the compressed database") do |path|
+    options[:output] = path
+  end
+  parser.on("-h", "--help", "Print this message") do
+    $stdout.puts(parser)
+    exit(0)
+  end
+end.parse!(ARGV)
+
+PROGRESS = ->(message) { $stdout.puts("  #{message}") }
+
+def source_label(options)
+  if options[:source_file]
+    options[:source_file]
+  else
+    "#{Wordbook::DatabaseBuilder::SOURCE_URLS.first} " \
+      "(+ #{Wordbook::DatabaseBuilder::SOURCE_URLS.length - 1} fallback)"
+  end
+end
+
+def banner(options)
+  $stdout.puts("#{"─" * 20} Wordbook Database Generator #{"─" * 20}")
+  $stdout.puts("Source:      #{source_label(options)}")
+  $stdout.puts("Output:      #{options[:output]}")
+  $stdout.puts("Compression: Level #{options[:compression_level]}")
+  $stdout.puts
+end
+
+def generate(source, options)
+  Wordbook::DatabaseBuilder.new(
+    source:            source,
+    output:            options[:output],
+    compression_level: options[:compression_level],
+    progress:          PROGRESS,
+  ).tap(&:build)
+end
+
+# The downloaded lexicon lives in a temporary directory, so a run leaves
+# nothing but its output behind — as upstream's TemporaryDirectory does.
+def with_source(options)
+  if options[:source_file]
+    yield(options[:source_file])
+  else
+    Dir.mktmpdir("wordbook-lexicon") do |directory|
+      yield(Wordbook::LexiconDownload.fetch(File.join(directory, "english-wordnet.xml.gz"), progress: PROGRESS))
+    end
+  end
+end
+
+banner(options)
+
+begin
+  with_source(options) do |source|
+    generate(source, options).then do |builder|
+      $stdout.puts
+      $stdout.puts("#{"─" * 25} Success #{"─" * 25}")
+      $stdout.puts("Generated: #{builder.output}")
+      $stdout.puts(
+        "Lexicon:   #{builder.specifiers.join(", ")} — #{builder.counts[:entries]} entries, " \
+          "#{builder.counts[:senses]} senses, #{builder.counts[:synsets]} synsets",
+      )
+    end
+  end
+rescue Wordbook::DatabaseBuilder::Error,
+       Wordbook::LexiconDownload::Error,
+       Wordbook::LmfReader::TruncatedError,
+       ArgumentError,
+       SystemCallError => e
+  $stderr.puts("✗ #{e.message}")
+  exit(1)
+end

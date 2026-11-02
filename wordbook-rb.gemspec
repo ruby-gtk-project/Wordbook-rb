@@ -98,7 +98,7 @@ Gem::Specification.new do |spec|
   ]
   spec.bindir = "exe"
   # Listed files are the relative paths from bindir above.
-  spec.executables = ["wordbook", "wordbook-search-provider"]
+  spec.executables = ["wordbook", "wordbook-generate-db", "wordbook-search-provider"]
   spec.require_paths = ["lib"]
 
   # Runtime dependencies. Without these `gem install wordbook-rb` installs an

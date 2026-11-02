@@ -238,6 +238,19 @@
               done
             fi
 
+            # The dictionary, when `rake wn:db` has built one into data/. It
+            # goes into pkgdatadir — share/wordbook — because that is where
+            # Wordbook::DatabaseManager.candidates looks, through
+            # GLib.system_data_dirs. Optional for the same reason upstream
+            # gates it on `-Dinstall_wn_db`: it is a 60 MB build product that
+            # is not in the tree, and the app without it shows its
+            # "Database not found" page rather than failing to build.
+            for archive in data/wn-*.db.zst; do
+              if [ -f "$archive" ]; then
+                install -Dm644 "$archive" "$out/share/wordbook/$(basename "$archive")"
+              fi
+            done
+
             # The GSettings schema, substituted and compiled the way
             # data/meson.build:62-71 installs upstream's.
             if [ -d data/schemas ]; then
@@ -428,6 +441,7 @@
             echo "run the devel:   WORDBOOK_PROFILE=development xvfb-run ruby exe/wordbook"
             echo "drive the app:   xvfb-run ruby test/drive_*.rb"
             echo "run the specs:   ruby -e 'require \"rspec/core\"; exit RSpec::Core::Runner.run([\"--format\", \"progress\", \"--require\", \"spec_helper\", \"spec\"])'"
+            echo "build the dict:  rake wn:db       (downloads the OEWN lexicon -> data/wn-*.db.zst)"
             echo "build locale/:   rake locale        (po/*.po -> locale/<lang>/LC_MESSAGES/wordbook.mo)"
             echo "validate data:   rake data:validate (upstream's three meson tests)"
           '';

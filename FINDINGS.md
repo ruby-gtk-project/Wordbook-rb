@@ -129,7 +129,7 @@ the **packaged** ruby, with the same `-rbundler/setup` and `BUNDLE_WITHOUT` the
 installed launcher's wrapper uses, over a WordNet-shaped SQLite file.
 `nix flake check` runs it.
 
-## 7 — the port ships no WordNet archive
+## 7 — the port ships no WordNet archive — **closed**
 
 Upstream generates `wn-<version>.db.zst` at build time with
 `scripts/generate-wn-db.py` and the Python `wn` package, and installs it into
@@ -138,9 +138,21 @@ Upstream generates `wn-<version>.db.zst` at build time with
 upstream Wordbook is installed alongside it, every search lands on the
 "Database not found" page.
 
-Generating it needs the `wn` package, which is Python. A Ruby
-`generate-wn-db.py` would have to read Open English WordNet's XML and write
-`wn`'s schema itself.
+Generating it needed the `wn` package, which is Python, so a Ruby
+`generate-wn-db.py` had to read Open English WordNet's XML and write `wn`'s
+schema itself. That is what it now does: `lib/wordbook/lmf_reader.rb` streams
+the WN-LMF lexicon and `lib/wordbook/database_builder.rb` writes the schema
+`lib/wordbook/base.rb` reads, through `exe/wordbook-generate-db` and
+`rake wn:db`. Verified against the real 2025 lexicon — 161,875 entries,
+212,659 senses, 120,564 synsets — and read back with `Base::Wordnet`, which is
+what `spec/wordbook/database_builder_spec.rb` does on a small lexicon on every
+run.
+
+What is still true, and is not a defect: the tree holds no archive. It is a
+60 MB build product, and upstream does not commit one either — `install_wn_db`
+is a meson option, off by default. `rake install:data` and `nix build` install
+`data/wn-*.db.zst` into `share/wordbook` when a `rake wn:db` run has produced
+one, and the app without one shows the page it is meant to.
 
 ## 8 — `Gio::DBusNodeInfo#interfaces` returns unusable values
 

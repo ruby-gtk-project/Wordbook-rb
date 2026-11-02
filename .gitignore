@@ -57,3 +57,7 @@ Appraisal.*.gemfile.lock
 # title as "History", and the only reason the working tree showed "Verlauf" was
 # an untracked locale/ that happened to be sitting there. `rake locale` rebuilds
 # them from po/; bin/setup and the devShell both call it.
+
+# The dictionary `rake wn:db` builds: a 24 MB build product, not a source
+# file. Upstream does not commit one either.
+/data/wn-*.db.zst

@@ -67,6 +67,7 @@ Non-widget modules, ported with no open component gap:
 |---|---|
 | `lib/wordbook/base.rb` (lookups, scorers) + `lib/wordbook/espeak.rb` (the subprocess half) | `wordbook/base.py` |
 | `lib/wordbook/database_manager.rb` | `wordbook/database.py` |
+| `lib/wordbook/lmf_reader.rb`, `lib/wordbook/database_builder.rb`, `lib/wordbook/lexicon_download.rb`, `exe/wordbook-generate-db`, `rake wn:db` | `scripts/generate-wn-db.py` + the vendored `subprojects/wn` loader + `data/meson.build:5-17` |
 | `lib/wordbook/settings.rb` | `wordbook/settings.py` |
 | `lib/wordbook/utils.rb` | `wordbook/utils.py` |
 | `lib/wordbook/constants.rb` | `wordbook/constants.py` |
@@ -97,11 +98,10 @@ behaviour is not.
 
 | What the user does not get | Upstream |
 |---|---|
-| **A dictionary.** Every search on a fresh install shows "Database not found"; the drive log says so. Nothing in this tree builds or installs `wn-<version>.db.zst`, and `Constants::WN_FILE_VERSION` defaults to `"dev"`, so `DatabaseManager.find_compressed_db` hunts for a `wn-dev.db.zst` that does not exist | `scripts/generate-wn-db.py` + `data/meson.build:5-17` |
 | **A way to install it.** Most users install upstream from a flatpak; there is no manifest here and no CI job producing an installable artifact, only `nix build` | `build-aux/flatpak/dev.mufeed.Wordbook.Devel.json` + `scripts/flatpak-wheel-gen.py` |
 | **Pictures of this program in GNOME Software.** `data/dev.mufeed.Wordbook.metainfo.xml.in:40,44` still points at `raw.githubusercontent.com/mufeedali/Wordbook/main/screenshots/*.png`, so Software shows a user screenshots of a different program. Nineteen usable PNGs of this one sit in `tmp/shots` | `screenshots/light.png`, `screenshots/dark.png` |
 | **A third build profile.** `profile=source` installs `dev.mufeed.Wordbook.Source.svg`; the port has `development` and stable only, so that icon is installed by nothing | `meson_options.txt` `profile=source` |
-| nothing — the Python `wn` library is vendored upstream and its behaviour is reimplemented here against the same SQLite schema (`lib/wordbook/base.rb:159`). What is missing is the data, which is the first row | `subprojects/wn` |
+| nothing — the Python `wn` library is vendored upstream, and both halves of what the app needs from it are reimplemented here: reading its SQLite schema (`lib/wordbook/base.rb:159`) and writing it from the WN-LMF lexicon (`lib/wordbook/database_builder.rb`) | `subprojects/wn` |
 | nothing — the port has no `.blp` files and the widget trees are reproduced in Ruby | `subprojects/blueprint-compiler.wrap` |
 
 ## Open gaps

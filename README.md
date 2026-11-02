@@ -127,7 +127,18 @@ the introspection typelibs and an Xvfb wrapper:
 nix develop --command xvfb-run -a ruby exe/wordbook      # the app
 nix develop --command xvfb-run -a ruby test/drive_wordbook.rb  # drive it and screenshot it
 nix develop --command xvfb-run -a rspec -O /dev/null -Ilib spec  # the suite
+nix develop --command rake wn:db                        # build the dictionary
 ```
+
+`rake wn:db` is the port of upstream's `scripts/generate-wn-db.py`: it
+downloads the Open English WordNet 2025 lexicon (13 MB gzipped), loads it into
+the SQLite schema `lib/wordbook/base.rb` reads and writes
+`data/wn-<version>.db.zst`, which `rake install:data` and `nix build` then
+install into `share/wordbook` — where `Wordbook::DatabaseManager` looks for it.
+It takes a few minutes and needs `zstd`. `exe/wordbook-generate-db --help`
+takes the same `--source-file`, `--output` and `--compression-level` options
+upstream's script does; pass them through the task as
+`WN_DB_ARGS="--compression-level 19"`.
 
 `test/drive_wordbook.rb` presents the real application and drives it: it waits
 for the database, searches real terms, opens every dialog, menu and page, fires
@@ -135,8 +146,8 @@ every action, hits the empty and error states, and asserts the observable
 result of each — 198 checks, ending in `DRIVE OK`, with nineteen PNGs in
 `tmp/shots`. It exits non-zero when a check fails, so it is the thing to run
 before claiming a widget change works. `test/wn_fixture.rb` writes the small
-WordNet database it searches against, since the port ships none
-(`FINDINGS.md`, defect 7).
+WordNet database it searches against, so the drive does not depend on a
+`rake wn:db` run having happened.
 
 ## 🤝 Contributing
 
