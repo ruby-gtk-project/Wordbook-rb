@@ -636,13 +636,21 @@ module Wordbook
         false
       end
 
+      # Upstream catches `GLib.Error` here (`window.py:260`), which in
+      # PyGObject is the one class every GError arrives as. These bindings
+      # split GErrors by domain instead, and the error an empty or non-text
+      # clipboard raises is `Gio::IOError::NotFound`, which descends from
+      # `Gio::Error` and *not* from `GLib::Error` — so the literal translation
+      # of upstream's `except GLib.Error` caught nothing and reading an empty
+      # clipboard took the whole application down. Found by
+      # test/drive_wordbook.rb; FINDINGS.md, defect 11.
       def search_clipboard_text(source, result)
         Base.clean_search_terms(source.read_text_finish(result).to_s).then do |text|
           unless text.strip.empty?
             trigger_search(text)
           end
         end
-      rescue GLib::Error
+      rescue GLib::Error, Gio::Error
         nil
       end
 
@@ -659,13 +667,16 @@ module Wordbook
         end
       end
 
+      # Same binding difference as search_clipboard_text above: an empty
+      # primary selection raises a Gio::Error, and this runs on every
+      # selection change, so it was the likeliest crash in the app.
       def selection_text(source, result)
         source.read_text_finish(result).to_s.then do |text|
           unless text.strip.empty?
             text.gsub("         ", "").delete("\n")
           end
         end
-      rescue GLib::Error
+      rescue GLib::Error, Gio::Error
         nil
       end
 

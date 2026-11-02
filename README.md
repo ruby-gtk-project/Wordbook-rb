@@ -125,14 +125,18 @@ the introspection typelibs and an Xvfb wrapper:
 
 ```sh
 nix develop --command xvfb-run -a ruby exe/wordbook      # the app
-nix develop --command xvfb-run -a ruby test/drive_window.rb  # drive it and screenshot it
+nix develop --command xvfb-run -a ruby test/drive_wordbook.rb  # drive it and screenshot it
 nix develop --command xvfb-run -a rspec -O /dev/null -Ilib spec  # the suite
 ```
 
-`test/drive_window.rb` presents the real window, checks the widget tree, the
-breakpoint and every action, and leaves PNGs in `tmp/screenshots`. It exits
-non-zero when a check fails, so it is the thing to run before claiming a
-widget change works.
+`test/drive_wordbook.rb` presents the real application and drives it: it waits
+for the database, searches real terms, opens every dialog, menu and page, fires
+every action, hits the empty and error states, and asserts the observable
+result of each — 198 checks, ending in `DRIVE OK`, with nineteen PNGs in
+`tmp/shots`. It exits non-zero when a check fails, so it is the thing to run
+before claiming a widget change works. `test/wn_fixture.rb` writes the small
+WordNet database it searches against, since the port ships none
+(`FINDINGS.md`, defect 7).
 
 ## 🤝 Contributing
 

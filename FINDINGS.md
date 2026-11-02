@@ -12,7 +12,7 @@ here.
 | Bindings | `gtk4` 4.3.9, `adwaita` 4.3.9 (ruby-gnome) |
 | Runtime | GTK 4.22.4, Ruby 3.4.9, Xvfb through the dev shell |
 
-Four of the ten below are **closed**, and three of those four were never
+Four of the thirteen below are **closed**, and three of those four were never
 really open: 1, 2 and 3 each recorded a widget as unconstructible when the
 constructor only wanted its arguments positionally, and 5 recorded GTK as
 uninitialisable when the dev shell's banner names the way in. They are kept,
@@ -44,9 +44,9 @@ with `add_setter(widget, "collapsed", true)` and
 So the window is an `Adwaita::ApplicationWindow` carrying the breakpoint
 upstream declares on its template (`window.blp:54`), and the hand-rolled
 `update_collapse` that watched `notify::default-width` is gone. The content
-goes in through `content=` rather than `child=`. `test/drive_window.rb`
-resizes the window and watches the split view collapse at 420px and open again
-at 900px, so this is measured rather than reasoned.
+goes in through `content=` rather than `child=`. `test/drive_wordbook.rb`
+resizes the window and watches the split view collapse at 420px and open again,
+so this is measured rather than reasoned.
 
 Two readers to know: the reader for `collapsed` is `collapsed?`, not
 `collapsed`, and `Adwaita::WrapBox` has no `homogeneous=`.
@@ -62,7 +62,7 @@ accelerator from what the application bound.
 So the dialog's rows name their action, as upstream's do
 (`shortcuts-dialog.blp`), and the port no longer hands them accelerator
 strings out of `Application::APP_ACCELS`.
-`tmp/screenshots/shortcuts.png`, written by `test/drive_window.rb`, shows the
+`tmp/shots/16-shortcuts.png`, written by `test/drive_wordbook.rb`, shows the
 eight rows with their keys filled in.
 
 Still true: upstream never registers `app.shortcuts`, because libadwaita
@@ -95,8 +95,8 @@ way in: every ruby invocation goes through
     nix develop --command xvfb-run -a ruby <script>
 
 and GTK initialises, the window maps, and `Gsk::Renderer#render_texture` plus
-`Gdk::Texture#save_to_png` write a PNG of it. `test/drive_window.rb` is the
-driver; `tmp/screenshots` is where its PNGs land.
+`Gdk::Texture#save_to_png` write a PNG of it. `test/drive_wordbook.rb` is the
+driver; `tmp/shots` is where its nineteen PNGs land.
 
 What that cost while it was believed: the first time this port was presented
 it aborted during startup, on the accessible labels, which had been written
@@ -174,3 +174,56 @@ from a one-object snippet and hands it back for the caller to configure in
 Ruby, so the five icon-only buttons keep the labels upstream gives them. The
 builder is kept alive alongside, because it owns what it built until the widget
 is parented.
+
+## 11 — the clipboard handlers rescued the wrong error class, and an empty selection killed the app — **fixed**
+
+Upstream catches `GLib.Error` around `read_text_finish`
+(`wordbook/window.py:242,260`), which in PyGObject is the one class every
+GError arrives as. These bindings split GErrors by domain instead:
+
+    Gdk::Clipboard#read_text_finish  ->  Gio::IOError::NotFound
+    ancestors: Gio::IOError::NotFound < GLib::ErrorInfo < Gio::IOError
+               < Gio::Error < StandardError
+
+`Gio::Error` does **not** descend from `GLib::Error`, so the port's literal
+translation of `except GLib.Error` caught nothing. `read_primary_selection`
+runs on every `changed` of the primary selection, and an empty selection
+raised straight out of the signal handler and ended the process — the whole
+application, from an action no user takes deliberately.
+
+Found by running the app: `test/drive_wordbook.rb` died silently part-way
+through its run with no output, and the same sequence outside the harness
+printed the GI backtrace. Nothing in the source reads as wrong, and a round of
+static review had passed over it.
+
+Fixed in `lib/wordbook/window.rb`: both handlers now rescue
+`GLib::Error, Gio::Error`. `test/drive_wordbook.rb` emits the clipboard's own
+`changed` signal with an empty selection and then checks the window is still
+there.
+
+## 12 — `Gtk::Widget#activate_action` activates nothing in these bindings
+
+`win.activate_action("win.toggle-sidebar", nil)` returns the widget and has no
+effect: the sidebar does not move, the menu does not open, the dialog does not
+appear. The accelerator and menu-item paths inside GTK are fine — the action
+exists, `window.lookup_action("toggle-sidebar").activate(nil)` does the work,
+and the shortcuts dialog resolves every accelerator the application bound —
+but the muxer entry point is not usable from Ruby.
+
+What that cost: the previous driver, `test/drive_window.rb`, checked seven
+window actions by calling `activate_action` and asserting it did not raise. It
+never raised and it never activated anything, so seven green checks covered
+nothing. `test/drive_wordbook.rb` activates the `Gio::SimpleAction` the window
+registered instead, and checks what the action changed.
+
+## 13 — the dev shell had no sqlite3, no espeak-ng and no zstd
+
+Three of the port's runtime dependencies were missing from `devShells.default`,
+so the database, the pronunciations and the archive extraction were code no run
+could enter: every drive ended on the "Database not found" page. Added to
+`flake.nix`: `pkgs.rubyPackages_3_4.sqlite3`, `pkgs.espeak-ng` and `pkgs.zstd`.
+
+Defect 6 is unchanged by this — the *packaged* app still has no `sqlite3`,
+because that needs `nix/gemset.nix` regenerated by `bundix` with network
+access. The devShell now has the gem; `nix build` still produces an app that
+raises `LoadError` on the first search.

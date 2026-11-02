@@ -64,12 +64,13 @@ command and `spec_helper` loads normally.
 ## What is not tested, and what that costs
 
 - **every widget, by RSpec.** No example constructs a window, a dialog, a row
-  or a popover. What covers them instead is `test/drive_window.rb`, which
-  presents the real application under Xvfb and runs 26 checks over the window
-  class, the widget tree, the breakpoint and all eleven actions, writing PNGs
-  to `tmp/screenshots`. It is a driver, not a spec: it is not in the RSpec
-  run and nothing in CI calls it yet. The five preference rows and the
-  definition-side widgets are still undriven;
+  or a popover. What covers them instead is `test/drive_wordbook.rb`, which
+  presents the real application under Xvfb and runs 198 checks over the window
+  class, the widget tree, the breakpoint, all eleven actions, every dialog,
+  the menu, the completion popover, the history sidebar, the definition page
+  and the empty and error states, writing nineteen PNGs to `tmp/shots`. It is
+  a driver, not a spec: it is not in the RSpec run and nothing in CI calls it
+  yet;
 - **the WordNet reader.** `Base::Wordnet`'s nine SQL statements are untested:
   the port ships no database to run them against (`FINDINGS.md`, defect 7).
   They are the single largest piece of hand-written stand-in code here, and

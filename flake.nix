@@ -253,6 +253,20 @@
             pkgs.rubyPackages_3_4.gettext
             # The spec runner. The suite is plain RSpec, so this is enough.
             pkgs.rubyPackages_3_4.rspec
+            # sqlite3 is the app's own runtime dependency
+            # (lib/wordbook/base.rb): without it every search lands on
+            # "Database not found" and the content page can never be driven.
+            # It is here as well as in nix/Gemfile because the gemset the
+            # packaged app builds from cannot be regenerated offline
+            # (FINDINGS.md, defect 6) — the devShell at least gets the gem.
+            pkgs.rubyPackages_3_4.sqlite3
+            # espeak-ng, the program lib/wordbook/espeak.rb shells out to.
+            # Without it the pronunciation fallback and the "read it aloud"
+            # button are code no run has ever entered.
+            pkgs.espeak-ng
+            # zstd, the program lib/wordbook/database_manager.rb unpacks the
+            # bundled WordNet archive with (FINDINGS.md, defect 4).
+            pkgs.zstd
             # This machine may have no display server at all, so the shell
             # carries one it can start itself: `xvfb-run ruby exe/<app>` both
             # launches the app and is how test/drive_*.rb is run.

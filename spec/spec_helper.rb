@@ -19,12 +19,25 @@ rescue LoadError => error
   raise error unless error.message.include?("kettle")
 end
 
-# External RSpec & related config
-require "kettle/test/rspec"
-# `kettle/test/rspec` installs harness helpers documented in spec/README.md.
+# External RSpec & related config.
+#
+# `kettle/test/rspec` installs the harness helpers documented in
+# spec/README.md. It is not in this checkout's bundle and cannot be fetched
+# offline, and requiring it unconditionally meant no example in the suite ran
+# at all (FINDINGS.md, defect 5; TEST_PARITY.md). No spec in spec/wordbook
+# uses one of its helpers, so it is required the way kettle-soup-cover above
+# is: when it is there the harness is installed, and when it is not the plain
+# RSpec suite still runs. A spec that does reach for `stub_env` or
+# `block_is_expected` will fail loudly here rather than be skipped.
+begin
+  require "kettle/test/rspec"
+rescue LoadError => error
+  raise error unless error.message.include?("kettle")
+end
 
-# This library
-require "wordbook/rb"
+# This library. `wordbook/rb` is not a file this port has — the version lives
+# in `wordbook/rb/version` — and requiring it aborted the whole suite.
+require "wordbook/rb/version"
 
 RSpec.configure do |config|
   # Enable flags like --only-failures and --next-failure

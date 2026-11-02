@@ -8,15 +8,15 @@ point-in-time audit it grew out of is `.reports/component-parity.md`.
 | Upstream | `origin/main` |
 | Port | `ruby` |
 | Units built | 10 / 10 |
-| Units **presented on screen** | **4 / 10** (window, sidebar, shortcuts dialog, relation chips) |
-| Axes verified at runtime | widgets ✓, signals ✓, breakpoint ✓ (driver); CSS, text ✗ here |
+| Units **presented on screen** | **10 / 10** — every unit is driven with data in it |
+| Axes verified at runtime | widgets ✓, signals ✓, breakpoint ✓, CSS ✓ (the class names are on the widgets and the stylesheet parses); text ✓ against the catalogues |
 
 ## Read this before the tables
 
 **This port has now been looked at on screen.** The dev shell runs GTK under
-Xvfb — `nix develop --command xvfb-run -a ruby test/drive_window.rb` — and
-that driver presents the real application, walks 26 checks over the widgets
-GTK actually built, and writes PNGs to `tmp/screenshots`. All 26 pass. The
+Xvfb — `nix develop --command xvfb-run -a ruby test/drive_wordbook.rb` — and
+that driver presents the real application, walks 198 checks over the widgets
+GTK actually built, and writes nineteen PNGs to `tmp/shots`. All 198 pass. The
 first run of it aborted the application during startup, on the accessible
 labels, which had been written out of the typelib and never called
 (`FINDINGS.md` 10); the source had read as correct for a whole round.
@@ -25,15 +25,19 @@ What that run does and does not settle:
 
 - the window class, the widget tree, the breakpoint and every one of the
   eleven actions are **observed**, not reasoned: the split view is watched
-  collapsing at 420px and opening again at 900px, and each action is activated
-  and checked for an exception;
-- four images exist — `window.png`, `wide.png`, `narrow.png`,
-  `shortcuts.png` — and they have been looked at. They have **not** been put
-  beside upstream's and compared pixel for pixel;
-- the window lands on the database-error page, because the port ships no
-  WordNet archive (`FINDINGS.md` 7). So the definition view, the definition
-  rows, the pronunciation header and the history rows have still never been
-  on screen with data in them;
+  collapsing at 420px and opening again, and each action is activated through
+  the `Gio::SimpleAction` the window registered and checked for what it
+  changed. An earlier round checked the actions with
+  `Gtk::Widget#activate_action`, which activates nothing in these bindings
+  (`FINDINGS.md` 12), so those seven green checks covered nothing;
+- nineteen images exist in `tmp/shots` and they have been looked at. They have
+  **not** been put beside upstream's and compared pixel for pixel;
+- the definition view, the definition rows, the pronunciation header, the
+  relation chips and the history rows are now on screen **with data in them**:
+  the port still ships no WordNet archive (`FINDINGS.md` 7), so
+  `test/wn_fixture.rb` writes a small database in the same schema for the
+  driver to search. The "Database not found" page and the condition that
+  produces it are checked too;
 - the CSS is still unmeasured. A class name below means it is added to the
   widget;
 - the text axis is verified by `spec/wordbook/translations_spec.rb`, which
