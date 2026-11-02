@@ -371,13 +371,21 @@ module Wordbook
 
       # The suggestions are links the label handles itself through
       # activate-link, which is how clicking one starts its search.
+      #
+      # The sentence is unmarked, exactly as upstream's `window.py:377` builds
+      # it. I had marked it with `_()`, which looked like an improvement and
+      # was not: it added a key to this port's message set that no translator
+      # has ever been asked about and that no catalogue carries, so it rendered
+      # in English anyway while making the port's key set differ from
+      # upstream's. The marker belongs upstream first, where the fifteen
+      # translators get the string.
       def suggestion_markup(suggestions)
         Array(suggestions).map { |word, _score| %(<a href="#{SEARCH_LINK_PREFIX}#{word}">#{word}</a>) }
                           .then do |links|
           if links.empty?
             ""
           else
-            format(_("Did you mean: %s?"), links.join(", "))
+            "Did you mean: #{links.join(", ")}?"
           end
         end
       end

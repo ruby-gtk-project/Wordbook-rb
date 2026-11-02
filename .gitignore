@@ -51,5 +51,9 @@ Appraisal.*.gemfile.lock
 # gemset committed or the app cannot be built reproducibly.
 !nix/Gemfile.lock
 
-# Compiled message catalogues: build output of `rake gettext:mo:update`.
-/locale/
+# locale/ is NOT ignored. It holds the compiled catalogues the running app
+# reads, and while they were ignored a clone of this branch was English in all
+# fifteen languages: `git archive` of HEAD with LANGUAGE=de showed the sidebar
+# title as "History", and the only reason the working tree showed "Verlauf" was
+# an untracked locale/ that happened to be sitting there. `rake locale` rebuilds
+# them from po/; bin/setup and the devShell both call it.

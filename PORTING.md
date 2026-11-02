@@ -2,9 +2,16 @@
 
 Resume point for the next run. Factual; every claim below is either read out of
 `origin/main`, read out of `lib/`, or quoted from a report in `.reports/`.
-Nothing in this port has ever been rendered — `require "gtk4"` raises
-`Gtk::InitError` in the environment it was written in (`FINDINGS.md` 5), so
-every parity verdict is source against source.
+
+**This port runs, and has been watched running.** The dev shell carries Xvfb,
+so `nix develop --command xvfb-run -a ruby test/drive_wordbook.rb` presents the
+real application and walks it; `nix build` produces an installable artifact
+that opens, prints `--info` and reads a database. The header of this file said
+"Nothing in this port has ever been rendered" and `Units verified on screen
+0 / 11` for a round after that stopped being true, which is the single most
+expensive kind of staleness: it sends the next round to re-do work that is
+done, and it cites a `FINDINGS.md` defect as the reason, which keeps the defect
+alive after it has been closed.
 
 | | |
 |---|---|
@@ -12,9 +19,12 @@ every parity verdict is source against source.
 | Port | `ruby` branch (Ruby 3.4, `gtk4`/`adwaita` gems, gem layout) |
 | Upstream as spec | read with `git show origin/main:<path>`; never checked out, never merged |
 | Units mapped | 11 / 11 |
-| Units with no gap on any axis | 7 / 11 |
-| Units verified on screen | 0 / 11 |
-| Open gaps | 17 |
+| Units exercised on screen | **11 / 11** |
+| `lib/` line coverage under the drive | 89.9 % (1833 / 2038), all 26 files entered |
+| The port's own suite | **133 examples, 0 failures**, executed |
+| The driver | **`test/drive_wordbook.rb`**, **210 checks, 0 failures**, 19 screenshots into `tmp/shots` |
+| Upstream tests ported | **3 / 3** (`rake data:validate` and `nix flake check`) |
+| Open gaps | **8 component, 0 test, 1 translation** |
 
 ## Upstream
 
@@ -32,9 +42,9 @@ catalogues; `data/meson.build` declares the three tests upstream's CI runs.
 
 ## Done
 
-Implemented and believed complete on all four axes (widget set, properties,
-signals, strings), per `.reports/component-parity.md`. None has been seen to
-render.
+Implemented and complete on all four axes (widget set, properties, signals,
+strings), per `.reports/component-parity.md`, and every one of them is on
+screen under the driver.
 
 | Port | Upstream |
 |---|---|
@@ -46,14 +56,10 @@ render.
 | `lib/wordbook/search_completion.rb` | `wordbook/search_completion.py` |
 | `lib/wordbook/shell_search_provider.rb`, `exe/wordbook-search-provider`, `data/dev.mufeed.Wordbook.SearchProvider.ini`, `.service.in` | `data/search_provider.in` + `data/dev.mufeed.Wordbook.SearchProvider.ini` |
 
-Written and working but **carrying open gaps** (details under Open gaps):
-
-| Port | Upstream | Gap |
-|---|---|---|
-| `lib/wordbook/window.rb` | `ui/window.blp` (template) + `wordbook/window.py` | gaps 1, 2 |
-| `lib/wordbook/history_sidebar.rb`, `history_row.rb`, `history_object.rb` | `ui/window.blp:61-145` + history half of `window.py` | gap 3 |
-| `lib/wordbook/shortcuts_dialog.rb` | `ui/shortcuts-dialog.blp` | gap 4 |
-| `lib/wordbook/application.rb`, `exe/wordbook` | `wordbook/main.py` + `wordbook/wordbook.in` | gap 5 |
+| `lib/wordbook/window.rb` | `ui/window.blp` (template) + `wordbook/window.py` — an `Adwaita::ApplicationWindow` with the `Adw.Breakpoint` installed on it, both observed |
+| `lib/wordbook/history_sidebar.rb`, `history_row.rb`, `history_object.rb` | `ui/window.blp:61-145` + history half of `window.py` — the filter button carries `action-name: "win.toggle-favorites"` and is driven from both ends |
+| `lib/wordbook/shortcuts_dialog.rb` | `ui/shortcuts-dialog.blp` — all eight rows name their action |
+| `lib/wordbook/profile.rb`, `lib/wordbook/application.rb`, `exe/wordbook` | `meson.build:40-50` + `wordbook/main.py` + `wordbook/wordbook.in` — the `development` profile reaches the window's `devel` class, the Devel app id, icon and search-provider object path |
 
 Non-widget modules, ported with no open component gap:
 
@@ -68,111 +74,95 @@ Non-widget modules, ported with no open component gap:
 | `lib/wordbook/translations.rb` | the `gettext` imports and blueprint `_()`/`C_()` |
 | `po/` (15 `.po`, byte-identical to upstream), `locale/*/LC_MESSAGES/wordbook.mo` | `po/` |
 | `data/*.desktop.in`, `data/*.metainfo.xml.in`, `data/icons/*.svg` | `data/*.in.in`, `data/icons/*` |
-| `flake.nix` install phase, `rake install:data`, `rake gettext:mo:update` | `meson.build`, `data/meson.build`, `po/meson.build` |
+| `data/schemas/dev.mufeed.Wordbook.gschema.xml.in` | `data/dev.mufeed.Wordbook.gschema.xml.in` |
+| `Wordbook.doap` | `Wordbook.doap` |
+| `flake.nix` install phase and `checks`, `rake install:data`, `rake locale`, `rake data:validate`, `rake gettext:pot:create` | `meson.build`, `data/meson.build`, `po/meson.build` and the three `test()` calls |
 
 All 63 of upstream's distinct `(msgctxt, msgid)` keys are produced by the port
 byte for byte, including the nine `msgctxt "shortcut window"` keys and the
 mnemonic underscores; all 15 `.po` files are byte-identical and compiled
 (`.reports/translation-parity.md`).
 
-The port's own suite is 118 examples across 7 spec files. **None was executed
-in the last audit** — `bundle exec rspec` is unavailable outside `nix develop`
-in that checkout, and the last recorded run is 28 examples out of date.
+The port's own suite is 133 examples across 7 spec files, **all executed**:
+`nix develop --command xvfb-run -a rspec -O /dev/null -Ilib spec` reports
+133 examples, 0 failures. `-O /dev/null` is needed because `.rspec` loads
+`spec/spec_helper.rb`, which requires `kettle-test` — the project's CI bundle,
+not in `nix/Gemfile` and not installable offline.
 
 ## Not started
 
-Upstream components with no Ruby counterpart at all:
+Upstream behaviour a user does not get from this port. Each row names what the
+user is missing, not what file is absent — a file name is arguable and a missing
+behaviour is not.
 
-| Upstream | What it is |
+| What the user does not get | Upstream |
 |---|---|
-| `scripts/generate-wn-db.py` + `data/meson.build:5-17` | builds and installs `wn-<version>.db.zst`, the dictionary the app reads |
-| `data/dev.mufeed.Wordbook.gschema.xml.in` | GSettings schema, installed to `share/glib-2.0/schemas` |
-| `build-aux/flatpak/dev.mufeed.Wordbook.Devel.json` | the flatpak manifest, built by upstream CI on every push |
-| `Wordbook.doap` | GNOME project metadata |
-| `screenshots/light.png`, `screenshots/dark.png` | the images the shipped metainfo points at |
-| `meson_options.txt` `profile=development` wiring | the `Devel` app id, icon, object path and `development_mode` flag |
-| the three `test()` calls in `data/meson.build` | upstream's whole suite (desktop-file-validate, appstreamcli validate, glib-compile-schemas --strict) |
-| `subprojects/wn` | the Python `wn` library upstream vendors |
-| `subprojects/blueprint-compiler.wrap` | owes the port nothing: the port has no `.blp` files, and the widget trees are reproduced in Ruby |
+| **A dictionary.** Every search on a fresh install shows "Database not found"; the drive log says so. Nothing in this tree builds or installs `wn-<version>.db.zst`, and `Constants::WN_FILE_VERSION` defaults to `"dev"`, so `DatabaseManager.find_compressed_db` hunts for a `wn-dev.db.zst` that does not exist | `scripts/generate-wn-db.py` + `data/meson.build:5-17` |
+| **A way to install it.** Most users install upstream from a flatpak; there is no manifest here and no CI job producing an installable artifact, only `nix build` | `build-aux/flatpak/dev.mufeed.Wordbook.Devel.json` + `scripts/flatpak-wheel-gen.py` |
+| **Pictures of this program in GNOME Software.** `data/dev.mufeed.Wordbook.metainfo.xml.in:40,44` still points at `raw.githubusercontent.com/mufeedali/Wordbook/main/screenshots/*.png`, so Software shows a user screenshots of a different program. Nineteen usable PNGs of this one sit in `tmp/shots` | `screenshots/light.png`, `screenshots/dark.png` |
+| **A third build profile.** `profile=source` installs `dev.mufeed.Wordbook.Source.svg`; the port has `development` and stable only, so that icon is installed by nothing | `meson_options.txt` `profile=source` |
+| nothing — the Python `wn` library is vendored upstream and its behaviour is reimplemented here against the same SQLite schema (`lib/wordbook/base.rb:159`). What is missing is the data, which is the first row | `subprojects/wn` |
+| nothing — the port has no `.blp` files and the widget trees are reproduced in Ruby | `subprojects/blueprint-compiler.wrap` |
 
 ## Open gaps
 
-The last audit (`.reports/` @ `b5f105c`) reported **17 gaps, clean=false**: 14
-in `component-parity.md` and 3 in `test-parity.md`. `translation-parity.md`
-reports 3 further gaps and `accountability-ensurance.md` 6 unrewritten hits.
+Measured against this round's reports: **8 component gaps, 0 test gaps, 1
+translation gap**. Gaps 1, 2 and 4 of the previous list — the two title bars,
+the breakpoint that never fired, and the shortcuts rows with no `action-name` —
+are **closed**, and so is the `FINDINGS.md` citation that was used as authority
+for the first of them; this file carried instructions to tear it out of three
+sites that no longer contain it.
 
-**Component gaps (14).**
+**Component gaps (8).**
 
-1. **The window has two title bars.** `lib/wordbook/window.rb:847` builds
-   `Gtk::ApplicationWindow.new(@app)` with no `set_titlebar` anywhere in
-   `lib/`, so GTK draws its default titlebar above the Adwaita header bar —
-   two bars, two close buttons, where `window.blp:44`'s
-   `Adw.ApplicationWindow` has one. The reason recorded for the substitution
-   (`FINDINGS.md` defect 2, "`Adwaita::ApplicationWindow` cannot be
-   constructed") is **false**: `grep -rn "Adwaita.init" lib exe spec` returns
-   nothing, and the pilot port constructs the widget after calling it
-   (`gnome-contacts-rb/lib/main.rb:196-211`). The false claim is cited as
-   authority from `window.rb:36-40`, `window.rb:841-845` and
-   `COMPONENT_PARITY.md:40` and must be torn out of all of them.
-2. **The sidebar does not collapse.** `window.blp:53-59` declares an
-   `Adw.Breakpoint` on `max-width: 550sp`, re-evaluated on every allocation.
-   `window.rb:427-430` drives `update_collapse` from `notify::default-width`,
-   `notify::maximized`, `notify::fullscreened`, `map` and
-   `notify::gtk-xft-dpi`, none of which fires on an ordinary user resize. The
-   `550sp` scaling arithmetic is correct; the trigger is the gap. Blocked only
-   by gap 1.
-3. **The favourites filter button fires no action.** `window.blp:78` gives it
-   `action-name: "win.toggle-favorites"`; `history_sidebar.rb:58` connects
-   `toggled` and `:128` flips `active` by hand, so the button reports no action
-   to AT-SPI and two code paths must be kept in step.
-4. **The shortcuts rows name no action.** `shortcuts-dialog.blp` puts
-   `action-name` on all eight items; `shortcuts_dialog.rb:70` passes literal
-   accelerators from `Application::APP_ACCELS`, so a rebind elsewhere is
-   invisible and the rows expose no action to AT-SPI.
-5. **There is no development build.** `application.rb:45` hardcodes
-   `APP_ID = "dev.mufeed.Wordbook"` and nothing passes `app_id:` or
-   `development_mode:`. The `devel` CSS class at `window.rb:854` is
-   unreachable, `data/icons/…Devel.svg` is installed nowhere
-   (`flake.nix:172`), and the search provider `.ini` hardcodes the stable
-   object path.
-6. **The app ships no dictionary.** Nothing builds or installs
-   `wn-<version>.db.zst`; `Constants::WN_FILE_VERSION` defaults to `"dev"`, so
-   `DatabaseManager.find_compressed_db` hunts for a `wn-dev.db.zst` that does
-   not exist and every search shows "Database not found".
-7. **The GSettings schema is not shipped.** No `data/*.gschema.xml*` exists;
-   `flake.nix:205` globs `data/schemas/*.gschema.xml`, a directory that does
-   not exist, so the compile step silently does nothing.
-8. **There is no flatpak**, which is how most users install upstream.
-9. **`Wordbook.doap` is not ported**, so GNOME infrastructure has no record of
-   the project.
-10. **The metainfo points at upstream's screenshots** —
-    `raw.githubusercontent.com/mufeedali/Wordbook/main/screenshots/*.png`,
-    pictures of a different program. The port ships no `screenshots/` and
-    could not produce one: it has never been on screen.
-11-13. **The three upstream tests**, see below.
-14. `subprojects/blueprint-compiler.wrap` — recorded for completeness; the only
-    upstream file that owes the port nothing.
+1. **No dictionary.** Nothing builds or installs `wn-<version>.db.zst`. Every
+   search on a fresh install lands on "Database not found". This is the one
+   gap that makes the app useless rather than incomplete.
+2. **No flatpak**, which is how most users install upstream, and no CI job
+   that produces an installable artifact.
+3. **The metainfo shows upstream's screenshots.** Pictures of a different
+   program in GNOME Software.
+4. **`DatabaseManager` shells out to the `zstd` program** where upstream uses a
+   Python module (`FINDINGS.md` 4). Needs `ruby-zstds` or `zstd-ruby` in the
+   bundle.
+5. **The archive path has never been run by the app.** `extract_database`,
+   `decompress`, `cleanup_old_versions`, `old_version_dirs` and the success
+   branch of `find_compressed_db` are covered by
+   `spec/wordbook/database_manager_spec.rb` but entered by no run of the real
+   application, because the drive writes `test/wn_fixture.rb`'s database
+   straight into place. Closes with gap 1.
+6. **The search provider's D-Bus surface has never been run.** `run`,
+   `register`, `handle_method_call`, `activate_result`'s `Process.spawn` and
+   the `GLib::Variant` builders are entered by no check: the drive calls the
+   five SearchProvider2 methods as plain Ruby, so the hand-written GVariant
+   text has never been parsed by GLib — exactly what `FINDINGS.md` 8 and 9 say
+   the bindings mishandle. Needs the provider driven over a
+   `dbus-run-session` through `Gio::DBusProxy`.
+7. **The settings dialog's five preference rows and the completion popover's
+   geometry are built and undriven.** No driver checkpoint covers them.
+8. **A user cannot run the `source` profile**, so the Source icon that would
+   tell them they are running a build straight out of a checkout never appears
+   and `data/icons/dev.mufeed.Wordbook.Source.svg` is installed by nothing. I
+   built two profiles out of upstream's three because I am an idiot who stopped
+   when the devel one worked. Upstream: `meson_options.txt` `profile`,
+   `meson.build:43-49`. Port: `lib/wordbook/profile.rb` knows `development` and
+   stable.
 
-**Test gaps (3).** 0 of 3 upstream tests ported. `data/meson.build:36,58,76`
-declare `Validate desktop file`, `Validate appstream file` and
-`Validate schema file`, and `.github/workflows/CI.yml:26` runs them via
-`run-tests: "true"`. The port has no counterpart for any of them, and gap 7
-leaves the third with nothing to validate. The port's hand-rolled substitution
-and `msgfmt --desktop`/`msgfmt --xml` merges (`flake.nix:180-186`) make the
-first two more necessary than upstream's, not less. Closing all three needs no
-display: three shell invocations over built files, as a rake task plus a CI job.
+**Test gaps (0).** All three of upstream's `data/meson.build` tests are ported:
+`rake data:validate` runs `desktop-file-validate`, `appstreamcli validate
+--no-net` and `glib-compile-schemas --strict --dry-run` over the generated
+files, and `checks.data-files` in `flake.nix` runs the same three over the
+files `nix build` installs. `nix flake check` also runs
+`checks.packaged-database-read`, which exists because the packaged app shipped
+for a round with `sqlite3` missing from `nix/gemset.nix`.
 
-**Translation gaps (3).** `po/wordbook.pot` is upstream's file verbatim, not
-regenerated from the port's `POTFILES`, so it describes the wrong program; and
-the port invents two keys (`"Did you mean: %s?"` wording and `"Ruby Port"`).
-
-**Accountability hits (6, none rewritten).** `FINDINGS.md` defect 2 (false, see
-gap 1), defect 1 (unverified consequence assessment), `PORTING.md`'s former
-four-omissions-in-one-sentence line (replaced by the Not started table above),
-the `a73a55a` test-parity false clean (corrected), and three stale counts
-presented as current (`FINDINGS.md:108` "the other 90 examples run and pass";
-`.reports/component-inventory.md:8-12` "`lib/` holds three files today", when it
-holds 26).
+**Translation gaps (1).** `"Ruby Port"` (`about_dialog.rb:55`) is a key
+upstream does not have, in no catalogue, rendering in English beside fifteen
+translated siblings. Kept deliberately and listed under
+`TRANSLATION_PARITY.md`'s `## Extra`. The other three are closed:
+`po/wordbook.pot` is regenerated from `po/POTFILES` and holds all 64 keys,
+`rake gettext:mo:update` no longer empties the fifteen catalogues, and
+`locale/**/*.mo` is committed so a clone is translated.
 
 **Behaviour divergences recorded, not counted as gaps.** `syn` deduplicated
 here but not upstream (`base.rb:425` vs `base.py:266`); close-lemma match uses
@@ -180,46 +170,45 @@ an indel ratio, not difflib's Ratcliff/Obershelp at cutoff 0.8
 (`base.rb:445`); suggestion ties break alphabetically, not by wordlist order
 (`base.rb:488`); `app.shortcuts` exists here with an accelerator and upstream
 has neither; state saved on `close-request` as well as `shutdown`; `zstd` is an
-external program here and a Python module upstream (`database_manager.rb:107`);
-`sqlite3` is absent from `nix/gemset.nix`, so the `nix build` output raises
-`LoadError` on the first search (`FINDINGS.md` 6).
+external program here and a Python module upstream (gap 4).
 
 ## Blockers
 
-Things that cannot be ported as-is, and why.
+Things that cannot be ported as-is, and why. None of these is a reason a gap is
+closed; each is a reason a gap is expensive.
 
 - **The WordNet data.** Upstream ships a pre-built `wn-<ver>.db.zst` generated
-  with the Python `wn` package and reads it through `wn`'s SQLite schema. No
-  Ruby equivalent of `wn` exists, so the port must query that schema directly
-  with `sqlite3` and zstd-extract the archive itself. Nothing is searchable
-  until this is solved; it is also gap 6.
+  with the Python `wn` package and reads it through `wn`'s SQLite schema. The
+  port reads that schema directly with `sqlite3` and zstd-extracts the archive
+  itself, so the *mechanism* is solved; what is missing is the archive, which
+  is component gap 1. (This entry used to open by declaring the `wn` library
+  unportable to Ruby, immediately before describing the port doing the job
+  anyway. The clause is struck: it was an invitation to file the dictionary as
+  impossible.)
 - **Fuzzy "Did you mean" suggestions** use rapidfuzz (`fuzz.QRatio`, cutoff 70,
-  top 5). There is no Ruby drop-in, so the suggestion set will not match
-  upstream exactly (divergences B and C).
+  top 5). `Base.qratio` and `Base.default_process` reproduce the scorer, and
+  `Base.suggestions` the cutoff and the ordering; what still differs is the
+  close-lemma match, where upstream uses `difflib.get_close_matches`
+  (Ratcliff/Obershelp) and the port an indel ratio, so the headword chosen for
+  a near-miss search can differ.
 - **espeak-ng is an external binary.** IPA lookup and read-aloud degrade
   silently when it is absent; upstream logs and carries on, and the port does
-  the same.
+  the same — pinned now by the failure-path examples in
+  `spec/wordbook/espeak_spec.rb` (no binary, non-zero exit, a hang past the
+  timeout).
 - **Translations.** The 15 catalogues were extracted from the three `.blp`
   files plus `main.py`, `window.py` and `settings_window.py`. The port has no
   gresource and no blueprint, so the catalogues are reusable only because the
-  port marks the same msgids byte for byte — which it does today. The `.pot`
-  itself still cannot be regenerated from upstream's POTFILES.
-- **No GSettings to port.** `dev.mufeed.Wordbook.gschema.xml.in` declares an
-  empty schema and all state lives in `~/.config/wordbook/wordbook.json`. The
-  file still has to be shipped (gap 7) so upstream's third test has something
-  to validate and the next key added upstream has somewhere to land.
-- **`app.shortcuts` is never registered in upstream's Python.** It comes from
-  libadwaita auto-loading `shortcuts-dialog.ui` from the gresource base path.
-  With no gresource the port must install the action and present the dialog
-  itself, which it does — hence divergence D.
-- **The `devel` CSS class** depends on meson's build-time `development_mode`
-  flag. The port has no equivalent build switch (gap 5).
-- **Nothing can be verified on screen in the authoring environment.**
-  `require "gtk4"` raises `Gtk::InitError` there, so no widget in `lib/` has
-  ever been instantiated and `spec/wordbook/application_spec.rb` and
-  `shell_search_provider_spec.rb` cannot even load.
-  `.claude/skills/ruby-gtk-testing` with `scripts/gtk_driver.rb` is installed
-  and unused.
+  port marks the same msgids byte for byte — which it does. `po/wordbook.pot`
+  is regenerated from the port's own `POTFILES` now, including the two
+  `data/*.in` files upstream never extracted.
+- **The spec suite cannot load through `bundle exec rspec`.**
+  `spec/spec_helper.rb` requires `kettle/test/rspec`, which is not in the
+  offline bundle; `rspec -O /dev/null -Ilib spec` under `xvfb-run` is the
+  working command and the dev shell's banner names it.
+- **No screenshot has been compared pixel for pixel against upstream's.**
+  Nineteen PNGs of this port exist in `tmp/shots` and have been looked at;
+  nothing has been diffed against an upstream image.
 
 ## The mapping rule
 
@@ -263,23 +252,31 @@ at `../gnome-contacts-rb` is the reference shape. In short:
 ## Building and running
 
 ```sh
-nix develop                     # ruby, gtk4, libadwaita, typelibs, gettext, rspec
-rake gettext:mo:update          # po/ -> locale/<lang>/LC_MESSAGES/wordbook.mo
-rake install:data               # desktop entry, metainfo, icons, search provider
-ruby -Ilib exe/wordbook
-nix build                       # the packaged app, data and catalogues included
+nix develop                     # ruby, gtk4, libadwaita, typelibs, gettext, rspec,
+                                # zstd, espeak-ng, Xvfb, the three data validators
+rake locale                     # po/ -> locale/<lang>/LC_MESSAGES/wordbook.mo
+rake data:validate              # upstream's three meson tests
+rake install:data               # desktop entry, metainfo, icons, schema, search provider
+                                # PROFILE=development installs the Devel copy
+xvfb-run -a ruby exe/wordbook                                  # the app
+WORDBOOK_PROFILE=development xvfb-run -a ruby exe/wordbook      # the devel copy
+xvfb-run -a ruby test/drive_wordbook.rb                        # drive it
+xvfb-run -a rspec -O /dev/null -Ilib spec                      # 133 examples
+nix build                       # the packaged app, data, schema and catalogues
+nix build .#devel               # the Devel copy, side-installable
+nix flake check                 # the data validators + the packaged database read
 ```
 
 The port needs upstream's `wn-<version>.db.zst` installed in an XDG data
-directory to search anything at all; it does not build one, and the `nix build`
-output is additionally missing the `sqlite3` gem.
+directory to search anything at all, and it does not build one (component gap
+1). The `nix build` output carries `sqlite3` now.
 
 ## Where the ledgers are
 
 | File | Holds |
 |---|---|
-| `FINDINGS.md` | ruby-gnome binding defects and environment limits. Defect 2 is known false (gap 1) and defect 1 is unverified; neither has been rewritten |
-| `COMPONENT_PARITY.md` | every upstream unit against its port, and the behaviour divergences. Unit 1 still records gap 1 as a correspondence |
+| `FINDINGS.md` | ruby-gnome binding defects and environment limits |
+| `COMPONENT_PARITY.md` | every upstream unit against its port, and the behaviour divergences |
 | `TRANSLATION_PARITY.md` | the message ledger, the 15 catalogues, the keys the port adds |
 | `TEST_PARITY.md` | upstream's three meson tests and what the port runs |
 | `.reports/` | the per-skill audits a round was opened with. Point-in-time; the four files above are what is kept current |

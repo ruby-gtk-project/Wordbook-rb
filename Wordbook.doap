@@ -1,0 +1,53 @@
+<Project xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+         xmlns:rdfs="http://www.w3.org/2000/01/rdf-schema#"
+         xmlns:foaf="http://xmlns.com/foaf/0.1/"
+         xmlns:gnome="http://api.gnome.org/doap-extensions#"
+         xmlns="http://usefulinc.com/ns/doap#">
+
+  <!-- Ported from upstream's Wordbook.doap. This is GNOME's project record:
+       what gnome.org, apps.gnome.org and the release team read to know who
+       maintains the app, where its bugs go and what it is written in. It had
+       no counterpart here at all, so this port was a program GNOME's own
+       infrastructure could not see.
+
+       Three fields differ from upstream's, and only because they describe
+       this tree rather than upstream's: programming-language is Ruby, the
+       bug database is this fork's issue tracker, and the maintainer entry
+       records the port alongside upstream's author, whose work and copyright
+       this is. -->
+
+  <name xml:lang="en">Wordbook</name>
+  <shortdesc xml:lang="en">Look up definitions for words</shortdesc>
+  <homepage rdf:resource="https://apps.gnome.org/Wordbook" />
+  <bug-database rdf:resource="https://github.com/ruby-gtk-project/Wordbook-rb/issues" />
+  <programming-language>Ruby</programming-language>
+  <license rdf:resource="https://www.gnu.org/licenses/gpl-3.0.html" />
+
+  <platform>GTK 4</platform>
+  <platform>Libadwaita</platform>
+
+  <developer>
+    <foaf:Person>
+      <foaf:name>Mufeed Ali</foaf:name>
+      <foaf:mbox rdf:resource="mailto:me@mufeed.dev" />
+      <foaf:account>
+        <foaf:OnlineAccount>
+            <foaf:accountServiceHomepage rdf:resource="https://github.com/"/>
+            <foaf:accountName>mufeedali</foaf:accountName>
+        </foaf:OnlineAccount>
+      </foaf:account>
+    </foaf:Person>
+  </developer>
+
+  <maintainer>
+    <foaf:Person>
+      <foaf:name>ruby-gtk-project</foaf:name>
+      <foaf:account>
+        <foaf:OnlineAccount>
+            <foaf:accountServiceHomepage rdf:resource="https://github.com/"/>
+            <foaf:accountName>ruby-gtk-project</foaf:accountName>
+        </foaf:OnlineAccount>
+      </foaf:account>
+    </foaf:Person>
+  </maintainer>
+</Project>

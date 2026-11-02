@@ -33,4 +33,14 @@ fi
 
 bundle "${bundle_args[@]}"
 
-# Do any other automated setup that you need to do here
+# The compiled message catalogues. Without them the app is English in all
+# fifteen of upstream's languages: lib/wordbook/translations.rb binds the
+# `wordbook` domain to locale/, and a .po is not a .mo. They are committed, so
+# this only matters after po/ changes — but it is cheap and it is the step a
+# fresh clone would otherwise skip.
+if command -v msgfmt >/dev/null 2>&1; then
+  bundle exec rake locale
+else
+  printf 'bin/setup: GNU msgfmt is not on PATH, so locale/ was not rebuilt.\n' >&2
+  printf '           The committed catalogues are used as they stand.\n' >&2
+fi

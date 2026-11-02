@@ -6,6 +6,7 @@ require "adwaita"
 require_relative "about_dialog"
 require_relative "base"
 require_relative "espeak"
+require_relative "profile"
 require_relative "rb/version"
 require_relative "settings"
 require_relative "shortcuts_dialog"
@@ -41,7 +42,9 @@ module Wordbook
   class Application
     include Translations
 
-    APP_ID = "dev.mufeed.Wordbook"
+    # Follows the profile: `dev.mufeed.Wordbook.Devel` for a development build,
+    # as upstream's `application_id` does (meson.build:43-49).
+    APP_ID = Profile.app_id
     APP_NAME = N_("Wordbook")
 
     # The accelerators the application installs. The shortcuts dialog does not
@@ -76,7 +79,12 @@ module Wordbook
       "-p"           => :auto_paste,
     }.freeze
 
-    def initialize(app_id: APP_ID, version: Rb::VERSION, development_mode: false, settings: Settings.get)
+    def initialize(
+      app_id: APP_ID,
+      version: Rb::VERSION,
+      development_mode: Profile.development?,
+      settings: Settings.get
+    )
       @app_id = app_id
       @version = version
       @development_mode = development_mode

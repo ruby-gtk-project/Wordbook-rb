@@ -14,8 +14,25 @@ RSpec.describe Wordbook::Translations do
   # been offered. Recorded in TRANSLATION_PARITY.md; listed here so that a key
   # added without being recorded fails this spec.
   ADDED_KEYS = [
-    [nil, "Did you mean: %s?"],
     [nil, "Ruby Port"],
+  ].freeze
+
+  # The strings only the two data/*.in files carry. Upstream's own catalogues
+  # never got them — all fifteen .po files hold 52 of upstream's 63 keys — but
+  # they are upstream's keys, they are in po/POTFILES, and po/wordbook.pot has
+  # to describe them or the next `po:update` merges them out of every language.
+  DATA_FILE_KEYS = [
+    [nil, "dictionary;"],
+    [nil, "Wordbook is an offline English-English dictionary application powered by WordNet and eSpeak."],
+    [nil, "Features:"],
+    [nil, "Fully offline"],
+    [nil, "Pronunciations"],
+    [nil, "Random Word"],
+    [nil, "Favorites"],
+    [nil, "Double click to search"],
+    [nil, "Dark mode"],
+    [nil, "Light Mode"],
+    [nil, "Dark Mode"],
   ].freeze
 
   MARKER = /
@@ -56,6 +73,7 @@ RSpec.describe Wordbook::Translations do
 
   MARKED = marked_keys
   CATALOGUE = catalogue_keys(File.join(ROOT, "po/de.po"))
+  POT = catalogue_keys(File.join(ROOT, "po/wordbook.pot"))
 
   it "asks for every message upstream's catalogue holds" do
     expect(CATALOGUE - MARKED).to eq([])
@@ -77,6 +95,20 @@ RSpec.describe Wordbook::Translations do
       expect(self.class.catalogue_keys(File.join(ROOT, "po/#{language}.po")))
         .to match_array(CATALOGUE), "#{language}.po has a different message set"
     end
+  end
+
+  # po/wordbook.pot was upstream's file verbatim for a whole round, with `#:`
+  # references to .blp and .py files that do not exist on this branch, and the
+  # task that would have regenerated it globbed lib/ and exe/ and so dropped
+  # every string in the two data/*.in files. These two examples pin the key set
+  # of the template that fifteen catalogues get merged against.
+  it "describes exactly upstream's message set plus the port's recorded additions" do
+    expect(POT).to match_array(CATALOGUE + DATA_FILE_KEYS + ADDED_KEYS)
+  end
+
+  it "holds the census's 64 keys: upstream's 63 and the one the port added" do
+    expect(CATALOGUE.length + DATA_FILE_KEYS.length).to eq(63)
+    expect(POT.length).to eq(64)
   end
 
   it "lists the port's own files in POTFILES, not upstream's" do

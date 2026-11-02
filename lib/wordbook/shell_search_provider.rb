@@ -5,6 +5,7 @@ require "securerandom"
 
 require_relative "base"
 require_relative "database_manager"
+require_relative "profile"
 require_relative "utils"
 
 module Wordbook
@@ -29,10 +30,15 @@ module Wordbook
   # ActivateResult is the lemma rather than the UUID. Both are accepted here.
   #
   class ShellSearchProvider
-    APP_ID = "dev.mufeed.Wordbook"
+    # The bus name and the object path follow the profile, as upstream's do:
+    # `data/meson.build:88-95` picks `/dev/mufeed/Wordbook/Devel/SearchProvider`
+    # for a development build, and the .ini the shell reads is substituted from
+    # the same two values, so a devel copy's provider cannot collide with a
+    # stable one's.
+    APP_ID = Profile.app_id
     INTERFACE = "org.gnome.Shell.SearchProvider2"
-    BUS_NAME = "#{APP_ID}.SearchProvider"
-    OBJECT_PATH = "/dev/mufeed/Wordbook/SearchProvider"
+    BUS_NAME = Profile.bus_name
+    OBJECT_PATH = Profile.object_path
     DEFAULT_BINARY = "wordbook"
 
     NODE_XML = <<~XML

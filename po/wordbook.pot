@@ -6,9 +6,33 @@
 #, fuzzy
 msgid ""
 msgstr ""
+"#-#-#-#-#  ruby.pot (wordbook VERSION)  #-#-#-#-#\n"
+"Project-Id-Version: wordbook VERSION\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2026-11-02 19:18+0000\n"
+"PO-Revision-Date: 2026-11-02 19:18+0000\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"Language: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=INTEGER; plural=EXPRESSION;\n"
+"#-#-#-#-#  desktop0.pot (wordbook)  #-#-#-#-#\n"
 "Project-Id-Version: wordbook\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-04-11 09:59+0530\n"
+"POT-Creation-Date: 2026-11-02 18:32+0000\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"Language: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"#-#-#-#-#  metainfo0.pot (wordbook)  #-#-#-#-#\n"
+"Project-Id-Version: wordbook\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2026-11-02 18:32+0000\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -17,220 +41,284 @@ msgstr ""
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 
-#: data/resources/ui/settings-window.blp:10
+#: ../../../home/nathan/src/github/ruby-gtk-project/Wordbook-rb/lib/wordbook/about_dialog.rb:22
+#: ../../../home/nathan/src/github/ruby-gtk-project/Wordbook-rb/lib/wordbook/application.rb:48
+#: ../../../home/nathan/src/github/ruby-gtk-project/Wordbook-rb/lib/wordbook/window.rb:817
+#: ../../../home/nathan/src/github/ruby-gtk-project/Wordbook-rb/lib/wordbook/window.rb:949
+#: data/dev.mufeed.Wordbook.desktop.in:3
+#: data/dev.mufeed.Wordbook.metainfo.xml.in:7
+msgid "Wordbook"
+msgstr ""
+
+#: ../../../home/nathan/src/github/ruby-gtk-project/Wordbook-rb/lib/wordbook/about_dialog.rb:23
+#: data/dev.mufeed.Wordbook.desktop.in:5
+#: data/dev.mufeed.Wordbook.metainfo.xml.in:8
+msgid "Look up definitions for words"
+msgstr ""
+
+#: ../../../home/nathan/src/github/ruby-gtk-project/Wordbook-rb/lib/wordbook/about_dialog.rb:25
+msgid "Copyright © 2016-2026 Mufeed Ali"
+msgstr ""
+
+#: ../../../home/nathan/src/github/ruby-gtk-project/Wordbook-rb/lib/wordbook/about_dialog.rb:34
+msgid "Ruby Port"
+msgstr ""
+
+#: ../../../home/nathan/src/github/ruby-gtk-project/Wordbook-rb/lib/wordbook/about_dialog.rb:49
+msgid "translator-credits"
+msgstr ""
+
+#: ../../../home/nathan/src/github/ruby-gtk-project/Wordbook-rb/lib/wordbook/about_dialog.rb:54
+msgid "Source Code"
+msgstr ""
+
+#: ../../../home/nathan/src/github/ruby-gtk-project/Wordbook-rb/lib/wordbook/error_dialog.rb:34
+msgid "Dismiss"
+msgstr ""
+
+#: ../../../home/nathan/src/github/ruby-gtk-project/Wordbook-rb/lib/wordbook/history_row.rb:101
+msgid "Toggle Favorite"
+msgstr ""
+
+#: ../../../home/nathan/src/github/ruby-gtk-project/Wordbook-rb/lib/wordbook/history_sidebar.rb:120
+msgid "History cleared"
+msgstr ""
+
+#: ../../../home/nathan/src/github/ruby-gtk-project/Wordbook-rb/lib/wordbook/history_sidebar.rb:157
+#: data/dev.mufeed.Wordbook.metainfo.xml.in:18
+msgid "History"
+msgstr ""
+
+#: ../../../home/nathan/src/github/ruby-gtk-project/Wordbook-rb/lib/wordbook/history_sidebar.rb:180
+#: ../../../home/nathan/src/github/ruby-gtk-project/Wordbook-rb/lib/wordbook/history_sidebar.rb:182
+msgid "Show Favorites Only"
+msgstr ""
+
+#: ../../../home/nathan/src/github/ruby-gtk-project/Wordbook-rb/lib/wordbook/history_sidebar.rb:189
+#: ../../../home/nathan/src/github/ruby-gtk-project/Wordbook-rb/lib/wordbook/history_sidebar.rb:191
+msgid "Clear History"
+msgstr ""
+
+#: ../../../home/nathan/src/github/ruby-gtk-project/Wordbook-rb/lib/wordbook/history_sidebar.rb:200
+msgid "No recent searches or favorites"
+msgstr ""
+
+#: ../../../home/nathan/src/github/ruby-gtk-project/Wordbook-rb/lib/wordbook/main_menu.rb:24
+msgid "Paste & Search"
+msgstr ""
+
+#: ../../../home/nathan/src/github/ruby-gtk-project/Wordbook-rb/lib/wordbook/main_menu.rb:25
+#: ../../../home/nathan/src/github/ruby-gtk-project/Wordbook-rb/lib/wordbook/window.rb:993
+msgid "Search Selected Text"
+msgstr ""
+
+#: ../../../home/nathan/src/github/ruby-gtk-project/Wordbook-rb/lib/wordbook/main_menu.rb:26
+msgid "_Random Word"
+msgstr ""
+
+#: ../../../home/nathan/src/github/ruby-gtk-project/Wordbook-rb/lib/wordbook/main_menu.rb:30
+msgid "_Preferences"
+msgstr ""
+
+#: ../../../home/nathan/src/github/ruby-gtk-project/Wordbook-rb/lib/wordbook/main_menu.rb:31
+msgid "_Keyboard Shortcuts"
+msgstr ""
+
+#: ../../../home/nathan/src/github/ruby-gtk-project/Wordbook-rb/lib/wordbook/main_menu.rb:32
+msgid "_About Wordbook"
+msgstr ""
+
+#: ../../../home/nathan/src/github/ruby-gtk-project/Wordbook-rb/lib/wordbook/pronunciation_row.rb:92
+msgid "Listen to Pronunciation"
+msgstr ""
+
+#: ../../../home/nathan/src/github/ruby-gtk-project/Wordbook-rb/lib/wordbook/settings_dialog.rb:77
 msgid "Appearance"
 msgstr ""
 
-#: data/resources/ui/settings-window.blp:13
-msgid "Force Dark Mode"
-msgstr ""
-
-#: data/resources/ui/settings-window.blp:18
+#: ../../../home/nathan/src/github/ruby-gtk-project/Wordbook-rb/lib/wordbook/settings_dialog.rb:83
 msgid "Behavior"
 msgstr ""
 
-#: data/resources/ui/settings-window.blp:21
+#: ../../../home/nathan/src/github/ruby-gtk-project/Wordbook-rb/lib/wordbook/settings_dialog.rb:89
+msgid "Force Dark Mode"
+msgstr ""
+
+#: ../../../home/nathan/src/github/ruby-gtk-project/Wordbook-rb/lib/wordbook/settings_dialog.rb:95
 msgid "Live Search"
 msgstr ""
 
-#: data/resources/ui/settings-window.blp:22
+#: ../../../home/nathan/src/github/ruby-gtk-project/Wordbook-rb/lib/wordbook/settings_dialog.rb:96
 msgid "Show definition as the terms are typed in"
 msgstr ""
 
-#: data/resources/ui/settings-window.blp:26
+#: ../../../home/nathan/src/github/ruby-gtk-project/Wordbook-rb/lib/wordbook/settings_dialog.rb:102
 msgid "Double Click Search"
 msgstr ""
 
-#: data/resources/ui/settings-window.blp:27
+#: ../../../home/nathan/src/github/ruby-gtk-project/Wordbook-rb/lib/wordbook/settings_dialog.rb:103
 msgid "Search any word by double clicking on it"
 msgstr ""
 
-#: data/resources/ui/settings-window.blp:31
+#: ../../../home/nathan/src/github/ruby-gtk-project/Wordbook-rb/lib/wordbook/settings_dialog.rb:109
 msgid "Auto Paste on Launch"
 msgstr ""
 
-#: data/resources/ui/settings-window.blp:32
+#: ../../../home/nathan/src/github/ruby-gtk-project/Wordbook-rb/lib/wordbook/settings_dialog.rb:110
 msgid "Automatically paste and search clipboard content on launch"
 msgstr ""
 
-#: data/resources/ui/settings-window.blp:36
+#: ../../../home/nathan/src/github/ruby-gtk-project/Wordbook-rb/lib/wordbook/settings_dialog.rb:116
 msgid "Pronunciations Accent"
 msgstr ""
 
-#: data/resources/ui/shortcuts-dialog.blp:6
+#: ../../../home/nathan/src/github/ruby-gtk-project/Wordbook-rb/lib/wordbook/shortcuts_dialog.rb:41
 msgctxt "shortcut window"
 msgid "General"
 msgstr ""
 
-#: data/resources/ui/shortcuts-dialog.blp:9
+#: ../../../home/nathan/src/github/ruby-gtk-project/Wordbook-rb/lib/wordbook/shortcuts_dialog.rb:49
 msgctxt "shortcut window"
 msgid "Show Shortcuts"
 msgstr ""
 
-#: data/resources/ui/shortcuts-dialog.blp:14
+#: ../../../home/nathan/src/github/ruby-gtk-project/Wordbook-rb/lib/wordbook/shortcuts_dialog.rb:50
 msgctxt "shortcut window"
 msgid "Preferences"
 msgstr ""
 
-#: data/resources/ui/shortcuts-dialog.blp:19
+#: ../../../home/nathan/src/github/ruby-gtk-project/Wordbook-rb/lib/wordbook/shortcuts_dialog.rb:51
 msgctxt "shortcut window"
 msgid "Paste and Search"
 msgstr ""
 
-#: data/resources/ui/shortcuts-dialog.blp:24
+#: ../../../home/nathan/src/github/ruby-gtk-project/Wordbook-rb/lib/wordbook/shortcuts_dialog.rb:52
 msgctxt "shortcut window"
 msgid "Random Word"
 msgstr ""
 
-#: data/resources/ui/shortcuts-dialog.blp:29
+#: ../../../home/nathan/src/github/ruby-gtk-project/Wordbook-rb/lib/wordbook/shortcuts_dialog.rb:53
 msgctxt "shortcut window"
 msgid "Search Selected Text"
 msgstr ""
 
-#: data/resources/ui/shortcuts-dialog.blp:34
+#: ../../../home/nathan/src/github/ruby-gtk-project/Wordbook-rb/lib/wordbook/shortcuts_dialog.rb:54
 msgctxt "shortcut window"
 msgid "Toggle Sidebar"
 msgstr ""
 
-#: data/resources/ui/shortcuts-dialog.blp:39
+#: ../../../home/nathan/src/github/ruby-gtk-project/Wordbook-rb/lib/wordbook/shortcuts_dialog.rb:55
 msgctxt "shortcut window"
 msgid "Show Menu"
 msgstr ""
 
-#: data/resources/ui/shortcuts-dialog.blp:44
+#: ../../../home/nathan/src/github/ruby-gtk-project/Wordbook-rb/lib/wordbook/shortcuts_dialog.rb:56
 msgctxt "shortcut window"
 msgid "Quit"
 msgstr ""
 
-#: data/resources/ui/window.blp:9
-msgid "Paste & Search"
-msgstr ""
-
-#: data/resources/ui/window.blp:14 wordbook/window.py:178
-msgid "Search Selected Text"
-msgstr ""
-
-#: data/resources/ui/window.blp:19
-msgid "_Random Word"
-msgstr ""
-
-#: data/resources/ui/window.blp:28
-msgid "_Preferences"
-msgstr ""
-
-#: data/resources/ui/window.blp:33
-msgid "_Keyboard Shortcuts"
-msgstr ""
-
-#: data/resources/ui/window.blp:38
-msgid "_About Wordbook"
-msgstr ""
-
-#: data/resources/ui/window.blp:71
-msgid "History"
-msgstr ""
-
-#: data/resources/ui/window.blp:77 data/resources/ui/window.blp:81
-msgid "Show Favorites Only"
-msgstr ""
-
-#: data/resources/ui/window.blp:92 data/resources/ui/window.blp:96
-msgid "Clear History"
-msgstr ""
-
-#: data/resources/ui/window.blp:132
-msgid "No recent searches or favorites"
-msgstr ""
-
-#: data/resources/ui/window.blp:161
-msgid "Clear"
-msgstr ""
-
-#: data/resources/ui/window.blp:167 data/resources/ui/window.blp:170
-msgid "Search"
-msgstr ""
-
-#: data/resources/ui/window.blp:182 data/resources/ui/window.blp:185
-msgid "Show History"
-msgstr ""
-
-#: data/resources/ui/window.blp:194 data/resources/ui/window.blp:197
-msgid "Main Menu"
-msgstr ""
-
-#: data/resources/ui/window.blp:216 wordbook/main.py:37 wordbook/main.py:98
-#: wordbook/main.py:152
-msgid "Wordbook"
-msgstr ""
-
-#: data/resources/ui/window.blp:217
-msgid "Look up definitions of any English term"
-msgstr ""
-
-#: data/resources/ui/window.blp:245
-msgid "No definition found"
-msgstr ""
-
-#: data/resources/ui/window.blp:260
-msgid "Database not found"
-msgstr ""
-
-#: data/resources/ui/window.blp:261
-msgid "Installation is incomplete. Please reinstall Wordbook."
-msgstr ""
-
-#: data/resources/ui/window.blp:264
-msgid "Exit"
-msgstr ""
-
-#: wordbook/main.py:154
-msgid "Look up definitions for words"
-msgstr ""
-
-#: wordbook/main.py:156
-msgid "translator-credits"
-msgstr ""
-
-#: wordbook/main.py:159
-msgid "Source Code"
-msgstr ""
-
-#: wordbook/main.py:161
-msgid "Copyright © 2016-2026 Mufeed Ali"
-msgstr ""
-
-#: wordbook/window.py:278
-msgid "Wordlist Loading"
-msgstr ""
-
-#: wordbook/window.py:279
-msgid "The word list is still loading. Please try again in a moment."
-msgstr ""
-
-#: wordbook/window.py:513
-msgid "History cleared"
-msgstr ""
-
-#: wordbook/window.py:514
-msgid "Undo"
-msgstr ""
-
-#: wordbook/window.py:674
-msgid "Listen to Pronunciation"
-msgstr ""
-
-#: wordbook/window.py:815
-msgid "Toggle Favorite"
-msgstr ""
-
-#: wordbook/window.py:872
-msgid "Dismiss"
-msgstr ""
-
-#: wordbook/window.py:898
+#: ../../../home/nathan/src/github/ruby-gtk-project/Wordbook-rb/lib/wordbook/window.rb:315
 msgid "Invalid input"
 msgstr ""
 
-#: wordbook/window.py:899
+#: ../../../home/nathan/src/github/ruby-gtk-project/Wordbook-rb/lib/wordbook/window.rb:315
 msgid "Nothing definable was found in your search input"
+msgstr ""
+
+#: ../../../home/nathan/src/github/ruby-gtk-project/Wordbook-rb/lib/wordbook/window.rb:630
+msgid "The word list is still loading. Please try again in a moment."
+msgstr ""
+
+#: ../../../home/nathan/src/github/ruby-gtk-project/Wordbook-rb/lib/wordbook/window.rb:630
+msgid "Wordlist Loading"
+msgstr ""
+
+#: ../../../home/nathan/src/github/ruby-gtk-project/Wordbook-rb/lib/wordbook/window.rb:774
+msgid "Undo"
+msgstr ""
+
+#: ../../../home/nathan/src/github/ruby-gtk-project/Wordbook-rb/lib/wordbook/window.rb:901
+msgid "Clear"
+msgstr ""
+
+#: ../../../home/nathan/src/github/ruby-gtk-project/Wordbook-rb/lib/wordbook/window.rb:906
+#: ../../../home/nathan/src/github/ruby-gtk-project/Wordbook-rb/lib/wordbook/window.rb:909
+msgid "Search"
+msgstr ""
+
+#: ../../../home/nathan/src/github/ruby-gtk-project/Wordbook-rb/lib/wordbook/window.rb:915
+#: ../../../home/nathan/src/github/ruby-gtk-project/Wordbook-rb/lib/wordbook/window.rb:917
+msgid "Show History"
+msgstr ""
+
+#: ../../../home/nathan/src/github/ruby-gtk-project/Wordbook-rb/lib/wordbook/window.rb:922
+#: ../../../home/nathan/src/github/ruby-gtk-project/Wordbook-rb/lib/wordbook/window.rb:926
+msgid "Main Menu"
+msgstr ""
+
+#: ../../../home/nathan/src/github/ruby-gtk-project/Wordbook-rb/lib/wordbook/window.rb:950
+msgid "Look up definitions of any English term"
+msgstr ""
+
+#: ../../../home/nathan/src/github/ruby-gtk-project/Wordbook-rb/lib/wordbook/window.rb:958
+msgid "No definition found"
+msgstr ""
+
+#: ../../../home/nathan/src/github/ruby-gtk-project/Wordbook-rb/lib/wordbook/window.rb:973
+msgid "Database not found"
+msgstr ""
+
+#: ../../../home/nathan/src/github/ruby-gtk-project/Wordbook-rb/lib/wordbook/window.rb:974
+msgid "Installation is incomplete. Please reinstall Wordbook."
+msgstr ""
+
+#: ../../../home/nathan/src/github/ruby-gtk-project/Wordbook-rb/lib/wordbook/window.rb:979
+msgid "Exit"
+msgstr ""
+
+#. Translators: These are search terms to find this application. Do NOT translate or localize the semicolons. The list MUST also end with a semicolon.
+#: data/dev.mufeed.Wordbook.desktop.in:11
+msgid "dictionary;"
+msgstr ""
+
+#: data/dev.mufeed.Wordbook.metainfo.xml.in:10
+msgid ""
+"Wordbook is an offline English-English dictionary application powered by "
+"WordNet and eSpeak."
+msgstr ""
+
+#: data/dev.mufeed.Wordbook.metainfo.xml.in:12
+msgid "Features:"
+msgstr ""
+
+#: data/dev.mufeed.Wordbook.metainfo.xml.in:14
+msgid "Fully offline"
+msgstr ""
+
+#: data/dev.mufeed.Wordbook.metainfo.xml.in:15
+msgid "Pronunciations"
+msgstr ""
+
+#: data/dev.mufeed.Wordbook.metainfo.xml.in:16
+msgid "Random Word"
+msgstr ""
+
+#: data/dev.mufeed.Wordbook.metainfo.xml.in:17
+msgid "Favorites"
+msgstr ""
+
+#: data/dev.mufeed.Wordbook.metainfo.xml.in:19
+msgid "Double click to search"
+msgstr ""
+
+#: data/dev.mufeed.Wordbook.metainfo.xml.in:20
+msgid "Dark mode"
+msgstr ""
+
+#: data/dev.mufeed.Wordbook.metainfo.xml.in:39
+msgid "Light Mode"
+msgstr ""
+
+#: data/dev.mufeed.Wordbook.metainfo.xml.in:43
+msgid "Dark Mode"
 msgstr ""

@@ -28,11 +28,19 @@ module Wordbook
   module Translations
     TEXT_DOMAIN = "wordbook"
 
-    # Searched in this order: an explicit override, the catalogues built into
-    # the source tree by `rake gettext:mo:update`, then the XDG data
-    # directories an installed copy's `.mo` files live in. Omitting `path:`
-    # would make the lookup depend on the working directory and silently find
-    # nothing when the app is started from its desktop file.
+    # Searched in this order: an explicit override, the catalogues committed
+    # under locale/ and rebuilt by `rake locale`, then the XDG data directories
+    # an installed copy's `.mo` files live in. Omitting `path:` would make the
+    # lookup depend on the working directory and silently find nothing when the
+    # app is started from its desktop file.
+    #
+    # `rake locale` and not `rake gettext:mo:update`: this comment named the
+    # latter for a round, and that task compiled po/<locale>/wordbook.po — a
+    # file the gem invents, with every msgstr empty — over the good catalogue,
+    # so following the instruction in this comment emptied all fifteen
+    # languages and exited zero. The Rakefile's FlatLayoutTask now points the
+    # gem at po/<locale>.po, so gettext:mo:update is safe too; `rake locale` is
+    # the one that only ever runs GNU msgfmt.
     def self.locale_dir
       candidates.find { |dir| Dir.exist?(dir) } || candidates.last
     end

@@ -3,4 +3,14 @@
 
 require "wordbook"
 
-exit(Wordbook::Application.new.run(ARGV))
+# The profile is read here rather than left to Application's defaults so that
+# the one place a reader looks — the launcher — says which application id and
+# which window styling this copy runs with. `packages.devel` in flake.nix sets
+# WORDBOOK_PROFILE=development in its wrapper, which is where upstream's
+# `-Dprofile=development` lands too.
+exit(
+  Wordbook::Application.new(
+    app_id:           Wordbook::Profile.app_id,
+    development_mode: Wordbook::Profile.development?,
+  ).run(ARGV),
+)

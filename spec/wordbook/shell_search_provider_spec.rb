@@ -129,13 +129,34 @@ RSpec.describe Wordbook::ShellSearchProvider do
       ].each { |name| expect(described_class::NODE_XML).to include(%(name="#{name}")) }
     end
 
+    # The .ini is a template, as upstream's is: meson substitutes @APP_ID@ and
+    # @object_path@ from the profile (data/meson.build:88-110), and here
+    # flake.nix and `rake install:data` do. So the comparison is between what
+    # the Ruby resolves for a profile and what the substitution would write.
     it "owns the bus name and object path the search provider .ini points at" do
       expect(described_class::BUS_NAME).to eq("dev.mufeed.Wordbook.SearchProvider")
       expect(described_class::OBJECT_PATH).to eq("/dev/mufeed/Wordbook/SearchProvider")
-      File.read(File.expand_path("../../data/dev.mufeed.Wordbook.SearchProvider.ini", __dir__)).then do |ini|
+      File.read(File.expand_path("../../data/dev.mufeed.Wordbook.SearchProvider.ini", __dir__))
+          .gsub("@APP_ID@", Wordbook::Profile.app_id)
+          .gsub("@object_path@", Wordbook::Profile.object_path)
+          .then do |ini|
         expect(ini).to include("BusName=#{described_class::BUS_NAME}")
         expect(ini).to include("ObjectPath=#{described_class::OBJECT_PATH}")
       end
+    end
+
+    it "moves the bus name and the object path with the profile, as upstream's meson does" do
+      expect(Wordbook::Profile.bus_name).to eq("dev.mufeed.Wordbook.SearchProvider")
+      expect(Wordbook::Profile.object_path).to eq("/dev/mufeed/Wordbook/SearchProvider")
+
+      # The profile is read from the environment because this port has no
+      # configure step; upstream reads it from `-Dprofile=development`.
+      original = ENV.fetch("WORDBOOK_PROFILE", nil)
+      ENV["WORDBOOK_PROFILE"] = "development"
+      expect(Wordbook::Profile.app_id).to eq("dev.mufeed.Wordbook.Devel")
+      expect(Wordbook::Profile.bus_name).to eq("dev.mufeed.Wordbook.Devel.SearchProvider")
+      expect(Wordbook::Profile.object_path).to eq("/dev/mufeed/Wordbook/Devel/SearchProvider")
+      ENV["WORDBOOK_PROFILE"] = original
     end
   end
 end

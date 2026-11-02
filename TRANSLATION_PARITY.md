@@ -6,12 +6,45 @@
 | Port | `ruby` |
 | Domain | `wordbook` (from upstream's `po/meson.build`) → port: **`wordbook`** |
 | Upstream messages | 63 distinct `(msgctxt, msgid)` keys over 77 call sites |
-| Extracted into `po/wordbook.pot` | 52 |
-| Marked in the port | **52 / 52**, byte-identically |
-| Languages | 15 → **15** |
-| Translated strings | 780 → **780** |
-| Keys the port adds | 2, recorded below |
+| Ported | **63 / 63**, byte-identically |
+| Extra | **1** (`Ruby Port`), English-only, recorded below |
+| Extracted into `po/wordbook.pot` | **64** — the 63 plus the one extra |
+| Languages | 15 → **15**, all fifteen `.mo` files committed under `locale/` |
+| Translated strings | 780 → **780 of 780** translated, 0 untranslated, 0 fuzzy |
 | Unresolved markers | 0 |
+
+Three of those numbers were wrong in this header last round, and the way they
+were wrong all pointed the same way:
+
+- **`Extracted into po/wordbook.pot | 52`** and **`Marked in the port | 52 / 52`**
+  were a pass measured against the wrong denominator. 52 is the entry count of
+  `po/wordbook.pot` as it stood — upstream's file verbatim, with `#:`
+  references to `.blp` and `.py` files that do not exist on this branch. It
+  described a Python program. Upstream has 63 keys; the port marks all 63; the
+  template now says so, because `rake gettext:pot:create` reads `po/POTFILES`
+  instead of globbing `lib/` and `exe/`, and extracts the two `data/*.in` files
+  with GNU `xgettext`'s Desktop reader and its metainfo ITS rules. Pinned by
+  two examples in `spec/wordbook/translations_spec.rb`.
+- **`Languages 15 → 15`** was measured against an untracked `locale/` that
+  happened to be sitting in the working tree. `/locale/` was in `.gitignore`,
+  so a clone of this branch was English in all fifteen languages: a
+  `git archive` of HEAD run with `LANGUAGE=de` showed the sidebar title as
+  "History". The catalogues are committed now, `rake locale` rebuilds them from
+  `po/` with GNU `msgfmt`, `bin/setup` and the dev shell both call it, and
+  `test/drive_wordbook.rb` asserts "Verlauf", "Nur Favoriten anzeigen" and
+  "Verlauf löschen" on screen in a process started with `LANGUAGE=de` — so this
+  row is a check now, not a claim.
+
+The translated-string count is measured, not asserted:
+
+```sh
+$ for l in $(cat po/LINGUAS); do msgfmt --statistics -o /dev/null po/$l.po; done
+52 translated messages.   # ×15 = 780, no "untranslated", no "fuzzy" in any line
+```
+
+A previous report put this at "772 translated, 8 untranslated". I could not
+reproduce that from these files by either `msgfmt --statistics` or a direct
+count of empty `msgstr`s: all 780 are filled.
 
 The previous round produced zero translatable messages: no gettext gem, no
 `po/`, no `bindtextdomain`, and every user-visible string a bare Ruby literal.
@@ -26,7 +59,7 @@ repository and the port discarded all of them. That is what this round closed.
 | module | `lib/wordbook/translations.rb` — `include GetText` and `bindtextdomain("wordbook", path: LOCALE_DIR)` once; every class with strings includes it, and the lookup is found through the ancestor chain |
 | locale dir | `WORDBOOK_LOCALE_DIR`, else `locale/` beside `lib/`, else `<XDG data dir>/locale` |
 | catalogues | `po/` is upstream's tree, carried across unchanged: 15 `.po`, `LINGUAS`, `wordbook.pot` |
-| compiled | `rake gettext:mo:update` → `locale/<lang>/LC_MESSAGES/wordbook.mo`. Build output, gitignored, packaged by the gemspec and built into `$out/share/Wordbook/locale` by `flake.nix` |
+| compiled | `rake locale` → `locale/<lang>/LC_MESSAGES/wordbook.mo`, with GNU `msgfmt`. **Committed**, not gitignored, so a clone is translated without a build step; also rebuilt by `bin/setup` and by the dev shell's `shellHook`, and built into `$out/share/Wordbook/locale` by `flake.nix`. `rake gettext:mo:update` does the same thing through the gem and is safe again — it used to compile a `po/<locale>/wordbook.po` that the gem invented, with 53 empty msgstrs, over the good catalogue, emptying all fifteen languages with exit status zero. The `Rakefile`'s `FlatLayoutTask` points the gem at the flat `po/<locale>.po` this port and upstream both ship |
 | GLib side | `Translations.bind_glib_domain` binds the same domain through libintl, for the desktop entry and the metainfo |
 
 Verified, not asserted: with `LANGUAGE=de`, `_("Clear History")` returns
@@ -89,9 +122,16 @@ read them, and no translator in any of the fifteen languages has ever been
 offered them. This is an upstream extraction bug, found by this audit.
 
 The port carries both files (`data/dev.mufeed.Wordbook.desktop.in`,
-`data/dev.mufeed.Wordbook.metainfo.xml.in`) **and lists them in its own
-`po/POTFILES`**, so the next extraction run offers all eleven. The merge path
-exists too: `rake install:data` and `flake.nix` run
+`data/dev.mufeed.Wordbook.metainfo.xml.in`), lists them in its own
+`po/POTFILES`, **and now extracts them**: `rake gettext:pot:create` reads
+`POTFILES` rather than globbing, runs GNU `xgettext --language=Desktop` over
+the desktop entry and `xgettext --its=<gettext>/its/metainfo.its` over the
+metainfo, and `msgcat`s the three results into `po/wordbook.pot`. All eleven
+are in the template, so the next `po:update` offers them to all fifteen
+languages instead of merging them out. Until this round the extractor globbed
+`lib/**/*.rb` + `exe/*` and would have dropped every one of the eleven, and the
+documented `pot:create` → `po:update` chain would have removed them from every
+catalogue. The merge path exists too: `rake install:data` and `flake.nix` run
 `msgfmt --desktop` / `msgfmt --xml` over them, which is what meson's
 `i18n.merge_file` does for upstream — `Name[de]`, `Comment[ru]` and 45
 `xml:lang` entries in the installed metainfo are there now.
@@ -101,14 +141,23 @@ exists too: `rake install:data` and `flake.nix` run
 reported; it is the one upstream bug this port can fix for upstream by
 pointing at its own `POTFILES`.
 
-## Keys the port adds
+## Extra — keys the port adds
+
+One, kept deliberately and listed as English-only:
 
 | msgid | Site | Why, and what is owed |
 |---|---|---|
-| `Ruby Port` | `about_dialog.rb` — the second About link | the port's own repository, so the code being run can be found. In no catalogue, so it renders in English everywhere. Not proposed upstream |
-| `Did you mean: %s?` | `window.rb` | upstream builds this sentence by f-string interpolation (`window.py:371`), so it is in no catalogue and is still English in all fifteen languages. The port makes it a real key — `format(_("Did you mean: %s?"), links.join(", "))` — which is parity work on the *bug*, not on the string. **Owed upstream:** the same change at `window.py:371` |
+| `Ruby Port` | `about_dialog.rb:55` — the second About link, `PORT_LINK_LABEL` | the port's own repository, so the code being run can be found. It is in no catalogue, so it renders in English beside fifteen translated siblings. Kept, because a user who wants the source of the thing they are running should find it; recorded here rather than quietly marked, because an extra key is a divergence in the key set whatever its merits |
 
-Two keys the previous round added have been **removed**: the
+`Did you mean: %s?` was a second added key and has been **removed**.
+`window.rb:391` marked it with `_()`, which looked like an improvement on
+upstream building the sentence unmarked at `window.py:377`. It was not: no
+translator in any of the fifteen languages has ever been offered the string, so
+it rendered in English anyway, and meanwhile the port's key set no longer
+matched upstream's. It is built unmarked now, exactly as upstream builds it.
+**Owed upstream:** mark it at `window.py:377`, where the translators get asked.
+
+Two keys an earlier round added were removed before this one: the
 `SettingsDialog` title "Preferences" and the `ShortcutsDialog` title
 "Keyboard Shortcuts". Upstream sets no title on either dialog, so both were an
 invented string *and* a visible header upstream does not have.

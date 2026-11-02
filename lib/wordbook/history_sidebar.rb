@@ -20,11 +20,16 @@ module Wordbook
   # The blp's explicit Viewport is left out: GtkListBox is not GtkScrollable,
   # so a GTK4 scrolled window inserts the viewport itself.
   #
-  # The filter button has no `action-name`. Upstream's carries
-  # `action-name: "win.toggle-favorites"` (`window.blp:79`); here the button's
-  # own `toggled` signal applies the filter and the window's action flips the
-  # button, so the two cannot toggle each other. The accessible labels
-  # upstream attaches to both header buttons
+  # The filter button carries `action-name: "win.toggle-favorites"`, as
+  # upstream's does (`window.blp:78`), so the button *is* the action: clicking
+  # it activates `win.toggle-favorites` and AT-SPI can tell a screen-reader
+  # user what the button does. It had a hand-written `toggled` connection and a
+  # hand-written `active` flip instead, which left two paths to keep in step
+  # and a button that reported no action at all. Upstream's
+  # `win.toggle-favorites` is a plain Gio.SimpleAction with no state
+  # (`window.py:214-216`), and its handler is what sets `active`
+  # (`window.py:855-860`) — so `toggle_favorites_filter` below does both, and
+  # there is one path. The accessible labels
   # (`window.blp:81-82` and `:96-98`) were missing from this file entirely
   # until a report found them, so a screen-reader user was told nothing about
   # either button; they are set with update_property below.
@@ -55,7 +60,6 @@ module Wordbook
           header.pack_start(favorites_filter_button)
           header.pack_end(clear_history_button)
 
-          favorites_filter_button.signal_connect("toggled") { |button| apply_favorites_only(button.active?) }
           clear_history_button.signal_connect("clicked") { clear_history }
         end
 
@@ -123,9 +127,11 @@ module Wordbook
       update_clear_button_sensitivity
     end
 
-    # What the window's toggle-favorites action does: the button's own toggled
-    # handler is what applies the filter.
-    def toggle_favorites_filter = favorites_filter_button.active = !favorites_filter_button.active?
+    # Upstream's `_toggle_favorites_filter` (`window.py:855-861`): the flag
+    # flips, the button follows it and the rows restyle. This is the only
+    # writer of either, and `win.toggle-favorites` — which the button activates
+    # through its action-name — is the only caller.
+    def toggle_favorites_filter = apply_favorites_only(!@favorites_only)
 
     # Upstream's _on_favorite_toggled: the flag, the settings and the row's
     # star and background all move together.
@@ -174,6 +180,7 @@ module Wordbook
       @favorites_filter_button ||= Utils.accessible("GtkToggleButton", _("Show Favorites Only")).tap do |button|
         button.icon_name = HistoryRow::UNSTARRED
         button.tooltip_text = _("Show Favorites Only")
+        button.action_name = "win.toggle-favorites"
         button.add_css_class("flat")
       end
     end
@@ -201,6 +208,7 @@ module Wordbook
 
       def apply_favorites_only(enabled)
         @favorites_only = enabled
+        favorites_filter_button.active = enabled
         favorites_filter_button.icon_name = filter_icon_name
         apply_visuals_to_all
       end

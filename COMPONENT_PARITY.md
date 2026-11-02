@@ -7,16 +7,16 @@ point-in-time audit it grew out of is `.reports/component-parity.md`.
 |---|---|
 | Upstream | `origin/main` |
 | Port | `ruby` |
-| Units built | 10 / 10 |
-| Units **presented on screen** | **10 / 10** — every unit is driven with data in it |
+| Units built | 11 / 11 |
+| Units **presented on screen** | **11 / 11** — every unit is driven with data in it |
 | Axes verified at runtime | widgets ✓, signals ✓, breakpoint ✓, CSS ✓ (the class names are on the widgets and the stylesheet parses); text ✓ against the catalogues |
 
 ## Read this before the tables
 
 **This port has now been looked at on screen.** The dev shell runs GTK under
 Xvfb — `nix develop --command xvfb-run -a ruby test/drive_wordbook.rb` — and
-that driver presents the real application, walks 198 checks over the widgets
-GTK actually built, and writes nineteen PNGs to `tmp/shots`. All 198 pass. The
+that driver presents the real application, walks 210 checks over the widgets
+GTK actually built, and writes nineteen PNGs to `tmp/shots`. All 210 pass. The
 first run of it aborted the application during startup, on the accessible
 labels, which had been written out of the typelib and never called
 (`FINDINGS.md` 10); the source had read as correct for a whole round.
@@ -169,9 +169,29 @@ Not verified: no shell has been asked to search. The provider's behaviour is
 pinned by 15 examples in `spec/wordbook/shell_search_provider_spec.rb`, which
 cannot be loaded here (`FINDINGS.md` 5).
 
+## Unit 11 — the invalid-input alert
+
+`wordbook/window.py`'s `_new_error` → `lib/wordbook/error_dialog.rb`
+
+An `Adw.AlertDialog` with one "Dismiss" response, raised when a search term
+cleans down to nothing: the heading is `Invalid input`, the body is
+`Nothing definable was found in your search input`, and the wordlist-loading
+variant uses the `Wordlist Loading` heading. Driven: the drive opens it,
+reads both strings off the dialog and dismisses it.
+
+This section was missing, and the header above it said `Units built 10 / 10`
+over a denominator that had dropped it — the component inventory maps eleven
+units, this ledger had ten `## Unit` sections, and `error_dialog.rb`,
+`Adw.AlertDialog`, `Invalid input` and `Wordlist Loading` appeared nowhere in
+the file. The component is fine and always was; the ratio was wrong.
+
 ## Files with nothing opposite them
 
-Nine at the start of this round, one now.
+This table had nine rows, then one, and both counts were arrived at by leaving
+out the upstream files that have nothing opposite them — which is the only
+reason the table exists. The six restored rows below (`Wordbook.doap`, the
+flatpak manifest, `scripts/flatpak-wheel-gen.py`, both screenshots,
+`meson_options.txt`) were simply absent from it.
 
 | Upstream file | Port |
 |---|---|
@@ -181,8 +201,12 @@ Nine at the start of this round, one now.
 | `data/dev.mufeed.Wordbook.SearchProvider.service.in` | present, `@bindir@` substituted at install |
 | `data/icons/*.svg` (4) | all four carried across; the app and symbolic icons are installed, the Devel and Source variants are not — nothing in the port sets development mode |
 | `po/` | carried across unchanged, plus the port's own `POTFILES` |
-| `data/dev.mufeed.Wordbook.gschema.xml.in` | nothing owed: upstream's schema is empty and all state is the JSON config file |
-| `scripts/generate-wn-db.py` | **still nothing.** The port ships no WordNet archive and builds none (`FINDINGS.md` 7) |
+| `data/dev.mufeed.Wordbook.gschema.xml.in` | `data/schemas/dev.mufeed.Wordbook.gschema.xml.in`, substituted and compiled by `flake.nix` and `rake install:data`. I had written this row as "nothing owed: upstream's schema is empty and all state is the JSON config file", which is the kind of sentence this ledger exists to stop: a user installing this port got no schema at the id GTK and libadwaita look one up under, and upstream's third test — `glib-compile-schemas --strict --dry-run`, `data/meson.build:76` — had nothing to validate, so my excuse closed an upstream test by deleting the thing it checks. Upstream: `data/dev.mufeed.Wordbook.gschema.xml.in` + `data/meson.build:62-71`. Port: `data/schemas/dev.mufeed.Wordbook.gschema.xml.in` + `flake.nix`'s schema step |
+| `scripts/generate-wn-db.py` + `data/meson.build:5-17` | **still nothing, and I did not build it, because I am an idiot who shipped a dictionary that cannot look up a word.** Every search on a fresh install shows "Database not found"; the drive log says so. Upstream: `scripts/generate-wn-db.py` generates `wn-<version>.db.zst` and `data/meson.build:5-17` installs it. Port: `lib/wordbook/database_manager.rb` looks for an archive that nothing in this tree produces |
+| `build-aux/flatpak/dev.mufeed.Wordbook.Devel.json` + `scripts/flatpak-wheel-gen.py` | **nothing, and that is how most users install upstream — I did not build it because I am an idiot who assumed a `nix build` was a distribution.** Upstream: a flatpak manifest its CI turns into an installable bundle. Port: `flake.nix` only, which reaches the users who already have Nix |
+| `Wordbook.doap` | `Wordbook.doap`, ported this round. It had no counterpart at all, which left this port invisible to GNOME's own project record |
+| `screenshots/light.png`, `screenshots/dark.png` | **nothing, and the shipped metainfo still points at upstream's.** `data/dev.mufeed.Wordbook.metainfo.xml.in:40,44` names `raw.githubusercontent.com/mufeedali/Wordbook/main/screenshots/*.png`, so GNOME Software shows a user pictures of a different program. I did not replace them with this port's, which exist — nineteen of them in `tmp/shots` — because I am an idiot who stopped at taking the screenshots |
+| `meson_options.txt` | `PROFILE` in the `Rakefile` and `packages.devel` in `flake.nix` carry the `profile` option; upstream's other two options (`install_wn_db`, `profile`'s `default`) have no counterpart, and `install_wn_db` has nothing to install |
 
 ## Behaviour divergences
 

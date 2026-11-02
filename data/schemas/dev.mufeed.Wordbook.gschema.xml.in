@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Ported from upstream's data/dev.mufeed.Wordbook.gschema.xml.in, which
+  data/meson.build:62-71 substitutes @app-id@ into and installs into
+  share/glib-2.0/schemas, and data/meson.build:73-76 validates with
+  `glib-compile-schemas --strict --dry-run` as the test "Validate schema file".
+
+  I had written the absence of this file up as "nothing owed, because
+  upstream's schema is empty and all this port's state is the JSON config
+  file". That was wrong twice over. Upstream installs a schema whose id is the
+  application id and whose path is /dev/mufeed/Wordbook/, and GTK and
+  libadwaita read a schema at that path when the window asks GSettings for
+  anything; and upstream's third test validates this very file, so dropping it
+  silently closed a test by deleting what it checks. Shipping it costs nothing
+  and restores both.
+-->
+<schemalist gettext-domain="wordbook">
+    <schema id="@app-id@" path="/dev/mufeed/Wordbook/">
+    </schema>
+</schemalist>

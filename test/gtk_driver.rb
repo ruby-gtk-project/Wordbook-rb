@@ -159,6 +159,7 @@ module GtkDriver
 
       def run_step((name, block), index)
         puts "[#{index}] #{name}"
+        quiesce
         block.call
       rescue StandardError => e
         # One broken step should not hide the rest of the run — the later steps
@@ -187,6 +188,28 @@ module GtkDriver
       # is dispatched before the paintable is asked for a node.
       def settle
         16.times { GLib::MainContext.default.iteration(false) }
+      end
+
+      # Run before every step, so a step asserts on a settled app rather than
+      # racing it. Two things have to finish first:
+      #
+      #   * the queued idle callbacks. GTK dispatches idles below the default
+      #     priority, so a timeout tick can win: an app that sets a stack's
+      #     visible child from an idle (which is what Wordbook's `_page_switch`
+      #     does, as upstream's does) had the step after it passing on a quiet
+      #     machine and failing on a loaded one — a flake, and in the output
+      #     indistinguishable from a defect;
+      #   * the worker threads. A search that runs off the main thread and
+      #     posts its result back through an idle needs both halves done.
+      #
+      # Each join is bounded by JOIN_SLICE, so a thread that never finishes
+      # costs a fraction of a tick rather than the run.
+      JOIN_SLICE = 0.25
+
+      def quiesce
+        settle
+        (Thread.list - [Thread.current]).each { |thread| thread.join(JOIN_SLICE) }
+        settle
       end
 
       def render(widget, path)

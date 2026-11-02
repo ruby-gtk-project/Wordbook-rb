@@ -104,7 +104,7 @@ end
 
 APP = Wordbook::Application.new
 
-GtkDriver.drive(APP, shots: SHOTS, interval: 500, timeout: 180) do |d, app|
+GtkDriver.drive(APP, shots: SHOTS, interval: 500, timeout: 420) do |d, app|
   window = -> { app.window }
   win = -> { app.window.window }
   content = -> { app.window.definition_view.listbox }
@@ -581,6 +581,9 @@ GtkDriver.drive(APP, shots: SHOTS, interval: 500, timeout: 180) do |d, app|
   end
 
   d.step("the favourites filter hides everything else") do
+    d.check("the filter button is the action, as upstream's blp declares") do
+      sidebar.call.favorites_filter_button.action_name == "win.toggle-favorites"
+    end
     fire.call("toggle-favorites")
     d.check("the filter button is active") { sidebar.call.favorites_filter_button.active? }
     d.check("the sidebar is filtering") { sidebar.call.favorites_only? }
@@ -592,9 +595,21 @@ GtkDriver.drive(APP, shots: SHOTS, interval: 500, timeout: 180) do |d, app|
     d.shot("11-favorites-only")
   end
 
-  d.step("the filter comes off again") do
-    fire.call("toggle-favorites")
+  # The other direction: activating the button rather than the action. This is
+  # what a click does, and it only works because the button carries
+  # `action-name` — the button used to apply the filter from its own `toggled`
+  # handler, which worked for a mouse and told a screen reader nothing.
+  d.step("the filter comes off again, driven from the button") do
+    # `signal_emit("clicked")` and not `activate`: Gtk::Widget#activate does
+    # nothing at all on a Gtk::ToggleButton in these bindings — it returns the
+    # widget and neither toggles it nor activates its action. "clicked" is what
+    # the click gesture emits, and what reaches GtkActionHelper.
+    sidebar.call.favorites_filter_button.signal_emit("clicked")
     d.check("the filter button is off") { !sidebar.call.favorites_filter_button.active? }
+    d.check("the sidebar stopped filtering") { !sidebar.call.favorites_only? }
+    d.check("the filter button shows an empty star") do
+      sidebar.call.favorites_filter_button.icon_name == Wordbook::HistoryRow::UNSTARRED
+    end
     d.check("the hidden rows came back") { sidebar.call.listbox.get_row_at_index(1).visible? }
   end
 
@@ -823,6 +838,66 @@ GtkDriver.drive(APP, shots: SHOTS, interval: 500, timeout: 180) do |d, app|
         end
       end
       d.check("a term with no definition returns nothing") { provider.initial_result_set(["zzzqqq"]).empty? }
+    end
+  end
+
+  # --- Other languages, other profiles ------------------------------------
+
+  # Both of these are decided when the process starts — gettext resolves
+  # LANGUAGE when the text domain is bound, and lib/wordbook/profile.rb reads
+  # WORDBOOK_PROFILE at load time, as upstream's meson reads
+  # `-Dprofile=development` at configure time — so each needs a process of its
+  # own. test/probe_window.rb builds the real window and prints what is on it.
+  #
+  # Each probe gets a session bus of its own through dbus-run-session. Without
+  # one, a probe running the stable profile asks to own the same bus name this
+  # driver's own application already owns, GApplication makes it the *remote*
+  # instance, and it prints nothing at all — which is what happened the first
+  # time this was written.
+  # `timeout` as well as the probe's own watchdog, because a child that never
+  # reaches its "activate" handler would otherwise hang the whole run.
+  probe = lambda do |env|
+    require "open3"
+    Open3.capture2(
+      env,
+      "timeout",
+      "120",
+      "dbus-run-session",
+      "--",
+      RbConfig.ruby,
+      File.expand_path("probe_window.rb", __dir__),
+      chdir: File.expand_path("..", __dir__),
+    ).then { |out, _status| JSON.parse(out.lines.grep(/\A\{/).last.to_s) }
+  end
+
+  # The catalogues were gitignored for a round, which made a clone English in
+  # all fifteen languages while the working tree read as translated. This is
+  # the check that would have caught it, and it fails if locale/ is missing.
+  # One probe, two things checked: the catalogue on screen, and the stable
+  # profile — the probe runs the stable profile, so the devel assertions below
+  # have their counterpart here without a third process.
+  d.step("the German catalogue reaches the screen") do
+    probe.call("LANGUAGE" => "de", "LC_ALL" => "C.UTF-8").then do |facts|
+      d.check("the sidebar title is translated") { facts["sidebar_title"] == "Verlauf" }
+      d.check("the filter button's tooltip is translated") do
+        facts["filter_tooltip"] == "Nur Favoriten anzeigen"
+      end
+      d.check("the clear button's tooltip is translated") { facts["clear_tooltip"] == "Verlauf löschen" }
+      d.check("the catalogues came from the repository, not from nixpkgs' share dir") do
+        facts["locale_dir"] == File.expand_path("../locale", __dir__)
+      end
+      d.check("the stable profile keeps the stable id") { facts["app_id"] == "dev.mufeed.Wordbook" }
+      d.check("the stable profile has no devel class") { !facts["window_css_classes"].include?("devel") }
+    end
+  end
+
+  d.step("the development profile is a second application") do
+    probe.call("WORDBOOK_PROFILE" => "development").then do |facts|
+      d.check("the application id is the Devel one") { facts["app_id"] == "dev.mufeed.Wordbook.Devel" }
+      d.check("the window wears the devel class") { facts["window_css_classes"].include?("devel") }
+      d.check("the search provider moves with it") do
+        facts["object_path"] == "/dev/mufeed/Wordbook/Devel/SearchProvider"
+      end
     end
   end
 
