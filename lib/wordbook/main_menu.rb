@@ -2,6 +2,8 @@
 
 require "gtk4"
 
+require_relative "translations"
+
 module Wordbook
   # MainMenu is the model behind the header bar's menu button.
   #
@@ -9,17 +11,25 @@ module Wordbook
   # data/resources/ui/window.blp: a search section and a help section, with the
   # same labels, mnemonics and action names.
   #
+  # The labels are marked with N_ in the tables and looked up with _() when the
+  # menu is built, so the catalogue is read after the locale is settled rather
+  # than while this file is being loaded. The mnemonic underscores are inside
+  # the msgid, as upstream has them, because a translator picks a mnemonic that
+  # works in their own language.
+  #
   class MainMenu
+    include Translations
+
     SEARCH_SECTION = [
-      ["Paste & Search", "win.paste-search"],
-      ["Search Selected Text", "win.search-selected"],
-      ["_Random Word", "win.random-word"],
+      [N_("Paste & Search"), "win.paste-search"],
+      [N_("Search Selected Text"), "win.search-selected"],
+      [N_("_Random Word"), "win.random-word"],
     ].freeze
 
     HELP_SECTION = [
-      ["_Preferences", "win.preferences"],
-      ["_Keyboard Shortcuts", "app.shortcuts"],
-      ["_About Wordbook", "app.about"],
+      [N_("_Preferences"), "win.preferences"],
+      [N_("_Keyboard Shortcuts"), "app.shortcuts"],
+      [N_("_About Wordbook"), "app.about"],
     ].freeze
 
     def build
@@ -35,7 +45,7 @@ module Wordbook
 
       def section(items)
         Gio::Menu.new.tap do |model|
-          items.each { |label, action| model.append(label, action) }
+          items.each { |label, action| model.append(_(label), action) }
         end
       end
   end

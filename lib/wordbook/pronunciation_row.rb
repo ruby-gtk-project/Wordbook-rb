@@ -2,6 +2,8 @@
 
 require "adwaita"
 
+require_relative "translations"
+
 module Wordbook
   # PronunciationRow is the header above a block of definitions: the lemma,
   # then its IPA dimmed next to it, then a button that reads it aloud.
@@ -15,6 +17,8 @@ module Wordbook
   # to espeak-ng as phonemes would compound the guess.
   #
   class PronunciationRow
+    include Translations
+
     SPEAK_ICON = "audio-volume-high-symbolic"
 
     def initialize(lemma, pronunciation, label_text: nil, css_class: "synset-header", on_speak: nil)
@@ -85,7 +89,7 @@ module Wordbook
     def play_button
       @play_button ||= Gtk::Button.new(icon_name: SPEAK_ICON).tap do |button|
         button.valign = :center
-        button.tooltip_text = "Listen to Pronunciation"
+        button.tooltip_text = _("Listen to Pronunciation")
         button.add_css_class("flat")
         button.add_css_class("circular")
       end

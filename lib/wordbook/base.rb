@@ -1,7 +1,5 @@
 # frozen_string_literal: true
 
-require "sqlite3"
-
 require_relative "constants"
 require_relative "database_manager"
 require_relative "espeak"
@@ -20,11 +18,22 @@ module Wordbook
   # needs against wn's schema (entries/forms/senses/synsets and their relation
   # tables) instead of reimplementing the library's object model.
   #
-  # Two helpers upstream gets from dependencies are reproduced here rather than
-  # pulled in: difflib's and rapidfuzz's similarity ratios are both the
-  # indel-based "2 x matches / total length" score, which is one short method
-  # (`ratio`), so the close-lemma match and the "Did you mean" suggestions
-  # score the same way they do upstream.
+  # Two scorers upstream gets from dependencies are written out here rather
+  # than pulled in, and they are not the same scorer:
+  #
+  #   * the "Did you mean" suggestions use rapidfuzz's `fuzz.QRatio`
+  #     (`wordbook/window.py:340`), which is the indel ratio applied to
+  #     rapidfuzz's `default_process` of both strings — lowercased, with every
+  #     non-alphanumeric character turned into a space, then trimmed. That is
+  #     `qratio` below. The first version of this file omitted the processing
+  #     and scored the raw strings downcased, which gave a different five
+  #     suggestions for every hyphenated or multi-word lemma;
+  #   * the close-lemma match uses `difflib.get_close_matches(..., cutoff=0.8)`
+  #     (`wordbook/base.py:244`), which is case-sensitive and scores with
+  #     Ratcliff/Obershelp rather than with an indel ratio. `ratio` below is
+  #     the indel ratio on the raw strings: the case sensitivity matches, the
+  #     algorithm does not, so the lemma this port picks for a near-miss search
+  #     can still differ from upstream's. Recorded in COMPONENT_PARITY.md.
   #
   module Base
     DEFAULT_ACCENT = "us"
@@ -163,6 +172,11 @@ module Wordbook
       # not hold the expected lexicon, which is what upstream's
       # get_wn_instance does with wn.Error.
       def self.open(path: DatabaseManager.extracted_db_path, specifier: Constants::WN_DB_VERSION)
+        # Required here rather than at the top of the file so that the rest of
+        # Base — the term cleaning, the scorers, the grouping, all of which are
+        # plain string work — can be loaded and tested without the database
+        # driver present.
+        require "sqlite3"
         Utils.log_info("Initializing WordNet...")
         SQLite3::Database.new(path, readonly: true).then do |database|
           database.results_as_hash = true
@@ -463,11 +477,12 @@ module Wordbook
 
     # --- Suggestions ---------------------------------------------------------
 
-    # Upstream asks rapidfuzz for the five closest words above a score of 70
-    # when a search finds nothing. The scorer it uses (QRatio) is the
-    # indel-based ratio `ratio` computes, and the length filter below only
-    # skips words that cannot reach the cutoff: with matches capped at the
-    # shorter length, 200 * min / (len1 + len2) is an upper bound on the score.
+    # Upstream asks rapidfuzz for the five closest words when a search finds
+    # nothing, then keeps the ones scoring strictly above 70
+    # (`window.py:340,373` — `score_cutoff=70` admits 70 and the list
+    # comprehension then drops it). The length filter below only skips words
+    # that cannot clear the cutoff: with matches capped at the shorter length,
+    # 200 * min / (len1 + len2) is an upper bound on the score.
     def self.suggestions(term, wordlist, limit: SUGGESTION_LIMIT, cutoff: SUGGESTION_CUTOFF)
       if term.length > 2
         scored_suggestions(term, wordlist, cutoff).sort_by { |word, score| [-score, word] }.first(limit)
@@ -485,23 +500,32 @@ module Wordbook
     end
 
     def self.scored(term, word, cutoff)
-      ratio(term, word).then do |score|
-        if score >= cutoff
+      qratio(term, word).then do |score|
+        if score > cutoff
           [word, score]
         end
       end
     end
 
     def self.feasible?(term, word, cutoff)
-      (200.0 * [term.length, word.length].min / (term.length + word.length)) >= cutoff
+      (200.0 * [term.length, word.length].min / (term.length + word.length)) > cutoff
     end
 
-    # The similarity score difflib's SequenceMatcher.ratio and rapidfuzz's
-    # fuzz.ratio both compute, on a 0-100 scale: twice the number of matching
-    # characters over the combined length.
+    # rapidfuzz's fuzz.QRatio: default_process both sides, then the indel
+    # ratio.
+    def self.qratio(first, second) = ratio(default_process(first), default_process(second))
+
+    # rapidfuzz.utils.default_process: every non-alphanumeric character becomes
+    # a space — a space, not nothing, so "re-read" scores as "re read" and not
+    # as "reread" — then the result is trimmed and lowercased.
+    def self.default_process(text) = text.to_s.gsub(/[^[:alnum:]]/, " ").strip.downcase
+
+    # The indel similarity on a 0-100 scale: twice the number of characters in
+    # the longest common subsequence over the combined length. Case-sensitive,
+    # as difflib is; `qratio` is what lowercases.
     def self.ratio(first, second)
-      first.to_s.downcase.then do |left|
-        second.to_s.downcase.then do |right|
+      first.to_s.then do |left|
+        second.to_s.then do |right|
           if left.empty? && right.empty?
             100.0
           else

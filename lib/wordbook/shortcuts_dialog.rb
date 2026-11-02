@@ -2,53 +2,73 @@
 
 require "adwaita"
 
+require_relative "translations"
+
 module Wordbook
   # ShortcutsDialog lists the keyboard shortcuts.
   #
   # A port of upstream's data/resources/ui/shortcuts-dialog.blp, which is an
-  # Adw.ShortcutsDialog with one "General" section. Upstream's items name an
-  # action and let Adwaita look its accelerator up; the Ruby ShortcutsItem is
-  # constructed with the accelerator itself, so the accelerators below are the
-  # ones the application binds in wordbook/main.py — plus one for the shortcuts
-  # window itself, which upstream's main.py leaves unbound.
+  # Adw.ShortcutsDialog with one "General" section.
+  #
+  # Upstream's items carry an `action-name` and let Adwaita resolve whatever
+  # accelerator the application bound to it. I could not do that here:
+  # Adwaita::ShortcutsItem.new takes its title and accelerator positionally and
+  # the binding offers no way to set `action-name` (FINDINGS.md, defect 3). So
+  # each row names its action and the accelerator is read out of the same table
+  # the application installs its accelerators from — the table is passed in
+  # rather than re-typed here, so a rebound shortcut cannot start disagreeing
+  # with what this dialog shows.
+  #
+  # The labels carry `msgctxt "shortcut window"`, which is what blueprint's
+  # C_() produces: `Preferences` with that context and `_Preferences` without
+  # it are two different keys, and all fifteen catalogues translate both. They
+  # are written out at each `p_` call site, context included, because a context
+  # held in a constant is a context no extractor can read: writing
+  # `p_(CONTEXT, "Quit")` produced nine context-less keys in this port and left
+  # upstream's nine unproduced.
   #
   class ShortcutsDialog < Adwaita::ShortcutsDialog
-    SECTIONS = {
-      "General" => [
-        ["Show Shortcuts", "<Control>question"],
-        ["Preferences", "<Control>comma"],
-        ["Paste and Search", "<Control><Shift>v"],
-        ["Random Word", "<Control>r"],
-        ["Search Selected Text", "<Control>s"],
-        ["Toggle Sidebar", "F9"],
-        ["Show Menu", "F10"],
-        ["Quit", "<Control>w"],
-      ],
-    }.freeze
+    include Translations
 
-    def initialize
+    def initialize(accels)
       super()
-      self.title = "Keyboard Shortcuts"
+      @accels = accels
     end
 
     def build
       tap do |dialog|
-        SECTIONS.each { |title, items| dialog.add(section(title, items)) }
+        dialog.add(general_section)
       end
     end
 
     private
 
-      def section(title, items)
+      def general_section
         Adwaita::ShortcutsSection.new.tap do |section|
-          section.title = title
-          items.each { |label, accelerator| section.add(item(label, accelerator)) }
+          section.title = p_("shortcut window", "General")
+          general_items.each { |label, action| section.add(item(label, action)) }
         end
       end
 
-      # Positional, not keyword, arguments — even though the error a
-      # no-argument new raises advertises the signature as
-      # "title: utf8, accelerator: utf8".
-      def item(label, accelerator) = Adwaita::ShortcutsItem.new(label, accelerator)
+      # Upstream's eight rows, in upstream's order.
+      def general_items
+        [
+          [p_("shortcut window", "Show Shortcuts"), "app.shortcuts"],
+          [p_("shortcut window", "Preferences"), "win.preferences"],
+          [p_("shortcut window", "Paste and Search"), "win.paste-search"],
+          [p_("shortcut window", "Random Word"), "win.random-word"],
+          [p_("shortcut window", "Search Selected Text"), "win.search-selected"],
+          [p_("shortcut window", "Toggle Sidebar"), "win.toggle-sidebar"],
+          [p_("shortcut window", "Show Menu"), "win.toggle-menu"],
+          [p_("shortcut window", "Quit"), "win.quit"],
+        ]
+      end
+
+      def item(label, action) = Adwaita::ShortcutsItem.new(label, accelerator_for(action))
+
+      # A row whose action has no accelerator would be built with an empty
+      # string, which Adwaita renders as a blank key. Every row has one today;
+      # if that stops being true, the accel table is what has to change.
+      def accelerator_for(action) = Array(@accels[action]).first.to_s
   end
 end

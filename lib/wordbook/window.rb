@@ -12,6 +12,7 @@ require_relative "main_menu"
 require_relative "search_completion"
 require_relative "settings"
 require_relative "settings_dialog"
+require_relative "translations"
 require_relative "utils"
 
 module Wordbook
@@ -23,20 +24,28 @@ module Wordbook
   # Ported from upstream's data/resources/ui/window.blp and
   # wordbook/window.py.
   #
-  # Three things differ from upstream, each forced by the bindings or by a bug:
+  # I did not build the window's responsive collapse as a breakpoint. On a
+  # phone-sized screen the sidebar still folds away, but it folds because this
+  # class watches the window's size and sets `collapsed` itself, and the sizes
+  # it can watch are not the ones a breakpoint observes: a
+  # `notify::default-width` arrives when the window's own default size changes,
+  # not on every allocation. So there are window sizes at which upstream has
+  # collapsed and this port has not.
+  # Upstream: `data/resources/ui/window.blp:54` — `Adw.Breakpoint` on
+  # `max-width: 550sp`. Port: `update_collapse` below. The threshold is now
+  # scaled the way `sp` is (`collapse_width`), so at 1.25 text scaling both
+  # collapse at 688 physical pixels; the signals it is evaluated on are still
+  # the wrong signals. FINDINGS.md, defect 2, is why closing it properly is
+  # expensive: only an AdwApplicationWindow can hold a breakpoint and
+  # `Adwaita::ApplicationWindow` cannot be constructed from these bindings.
   #
-  #   * the window is a Gtk::ApplicationWindow, because Adwaita's is unusable
-  #     from Ruby. That costs the blp's Adw.Breakpoint, which only an
-  #     Adw.ApplicationWindow can hold, so the sidebar's collapse is driven by
-  #     watching the window's width instead — the same 550px threshold;
-  #   * a search is superseded by bumping a generation counter rather than by
-  #     setting a threading.Event: a result whose generation is stale is
-  #     dropped when it comes back, which is what cancelling it achieved;
-  #   * the entry's clear icon empties the entry. Upstream routes it through
-  #     trigger_search(""), which returns early on blank input, so the icon
-  #     does nothing there.
+  # A search is superseded by bumping a generation counter rather than by
+  # setting a threading.Event: a result whose generation is stale is dropped
+  # when it comes back, which is what cancelling it achieved.
   #
   class Window
+    include Translations
+
     PAGES = {
       welcome:     "welcome_page",
       content:     "content_page",
@@ -48,17 +57,29 @@ module Wordbook
     LIVE_SEARCH_DELAY = 400
     HISTORY_DELAY = 2000
     SPEAK_SPEED = 120
-    COLLAPSE_WIDTH = 550
+
+    # The blp's breakpoint condition is `max-width: 550sp`. An `sp` is a
+    # density-independent pixel multiplied by the text scaling factor, so the
+    # threshold in physical pixels is 550 x scale — 688 at 1.25 scaling.
+    COLLAPSE_WIDTH_SP = 550
+
+    # gtk-xft-dpi is in 1024ths of a point and 96 dpi is scale 1.0.
+    UNSCALED_XFT_DPI = 96 * 1024
     MIN_WIDTH = 360
     MIN_HEIGHT = 280
     SEARCH_LINK_PREFIX = "search;"
 
-    # Ctrl, Alt or Super held means the key belongs to a shortcut, not to the
-    # quick-search typing the key controller implements.
+    # Upstream gates the quick-search on
+    # `state & Gtk.accelerator_get_default_mod_mask() in (SHIFT_MASK, 0)`
+    # (`window.py:549-555`): any modifier in the default mask other than Shift
+    # means the key belongs to a shortcut. This is that mask without Shift.
+    # Hyper was missing from it at first, so Hyper+a typed an "a" into the
+    # entry here where upstream let the key through.
     SHORTCUT_MASK = [
       Gdk::ModifierType::CONTROL_MASK,
       Gdk::ModifierType::ALT_MASK,
       Gdk::ModifierType::SUPER_MASK,
+      Gdk::ModifierType::HYPER_MASK,
       Gdk::ModifierType::META_MASK,
     ].sum(&:to_i)
 
@@ -143,7 +164,7 @@ module Wordbook
                   end
 
                   db_error_page.child = exit_button
-                  exit_button.signal_connect("clicked") { @app.quit }
+                  exit_button.signal_connect("clicked") { exit_immediately }
                 end
               end
             end
@@ -155,9 +176,19 @@ module Wordbook
         end
         win.add_controller(key_controller)
 
+        # The blp declares both of these on the template, so they are set when
+        # the window is built rather than once the database has finished
+        # extracting: the entry is focused while the spinner is still up, and
+        # Return presses the search button whatever the live-search setting is.
+        win.focus_widget = search_entry
+        win.default_widget = search_button
+
         win.signal_connect("notify::is-active") { paste_when_active }
         win.signal_connect("notify::default-width") { update_collapse }
         win.signal_connect("notify::maximized") { update_collapse }
+        win.signal_connect("notify::fullscreened") { update_collapse }
+        win.signal_connect("map") { update_collapse }
+        Gtk::Settings.default&.signal_connect("notify::gtk-xft-dpi") { update_collapse }
         win.signal_connect("close-request") { save_state_and_close }
 
         completion.build
@@ -174,10 +205,6 @@ module Wordbook
 
     def completion_enabled=(enabled)
       completion.enabled = enabled
-    end
-
-    def default_widget=(widget)
-      window.default_widget = widget
     end
 
     # Upstream's refresh_current_search_pronunciations: re-runs the search that
@@ -296,7 +323,7 @@ module Wordbook
       def report_invalid_input
         unless @settings.live_search
           GLib::Idle.add do
-            show_error("Invalid input", "Nothing definable was found in your search input")
+            show_error(_("Invalid input"), _("Nothing definable was found in your search input"))
             false
           end
         end
@@ -361,7 +388,7 @@ module Wordbook
           if links.empty?
             ""
           else
-            "Did you mean: #{links.join(", ")}?"
+            format(_("Did you mean: %s?"), links.join(", "))
           end
         end
       end
@@ -398,8 +425,32 @@ module Wordbook
       end
 
       def update_collapse
-        split_view.collapsed = current_width <= COLLAPSE_WIDTH
+        split_view.collapsed = current_width <= collapse_width
         false
+      end
+
+      def collapse_width = (COLLAPSE_WIDTH_SP * text_scale_factor).round
+
+      # The scaling factor GNOME's "Large Text" and the text-scaling-factor
+      # setting express through gtk-xft-dpi.
+      def text_scale_factor
+        Gtk::Settings.default.then do |settings|
+          if settings
+            scale_from(settings)
+          else
+            1.0
+          end
+        end
+      end
+
+      def scale_from(settings)
+        settings.gtk_xft_dpi.to_f.then do |dpi|
+          if dpi.positive?
+            dpi / UNSCALED_XFT_DPI
+          else
+            1.0
+          end
+        end
       end
 
       def current_width
@@ -505,21 +556,15 @@ module Wordbook
         end
       end
 
+      # Upstream's _on_entry_icon_clicked calls trigger_search("")
+      # (`window.py:491-493`), and trigger_search returns early on blank input,
+      # so pressing the clear icon upstream does nothing at all. This port used
+      # to empty the entry instead, which is a nicer button and a different
+      # app.
       def on_entry_icon_pressed(position)
         if position == Gtk::EntryIconPosition::SECONDARY
-          clear_search
+          trigger_search("")
         end
-      end
-
-      def clear_search
-        search_entry.signal_handler_block(entry_changed_handler) do
-          search_entry.text = ""
-          search_entry.secondary_icon_name = ""
-        end
-        completion.clear
-        definition_view.clear
-        @searched_term = nil
-        page_switch(:welcome)
       end
 
       def run_delayed_search
@@ -572,12 +617,13 @@ module Wordbook
         end
       end
 
+      # The default widget is the search button whatever this setting says —
+      # the blp declares `default-widget: search_button` on the template
+      # unconditionally (`window.blp:51`) and build sets it there. Only the
+      # button's visibility and the completion popover follow the setting.
       def apply_live_search_visibility
         completion.enabled = !@settings.live_search
         search_button.visible = !@settings.live_search
-        unless @settings.live_search
-          window.default_widget = search_button
-        end
       end
 
       # --- Actions ----------------------------------------------------------
@@ -623,7 +669,7 @@ module Wordbook
 
       def search_random_word
         if @wordlist.empty?
-          show_error("Wordlist Loading", "The word list is still loading. Please try again in a moment.")
+          show_error(_("Wordlist Loading"), _("The word list is still loading. Please try again in a moment."))
         else
           trigger_search(@wordlist.sample)
         end
@@ -756,7 +802,7 @@ module Wordbook
 
       def show_undo_toast(message, undo)
         Adwaita::Toast.new(message).tap do |toast|
-          toast.button_label = "Undo"
+          toast.button_label = _("Undo")
           toast.signal_connect("button-clicked") { undo.call }
           toast_overlay.add_toast(toast)
         end
@@ -773,6 +819,13 @@ module Wordbook
         false
       end
 
+      # Upstream's _on_exit_clicked is `sys.exit()` (`window.py:537-539`): the
+      # process ends without do_shutdown running, so the history and the window
+      # size are not written. Quitting the application here instead would run
+      # this port's shutdown handler and save them, which is a different thing
+      # to press.
+      def exit_immediately = exit!(0)
+
       # A term picked in the sidebar searches it, and on a phone-sized window
       # the sidebar gets out of the way again.
       def activate_history_term(term)
@@ -786,14 +839,17 @@ module Wordbook
 
     # --- Memoized widgets ---------------------------------------------------
 
-    # Adwaita's ApplicationWindow is broken in these bindings; every other
-    # Adwaita widget works inside Gtk's.
+    # Gtk::ApplicationWindow stands where upstream has Adw.ApplicationWindow
+    # (FINDINGS.md, defect 2: Adwaita::ApplicationWindow cannot be constructed
+    # from these bindings). The Adw.Breakpoint that window should hold is still
+    # missing — see update_collapse.
     def window
       @window ||= Gtk::ApplicationWindow.new(@app).tap do |win|
-        win.title = "Wordbook"
+        win.title = _("Wordbook")
         win.icon_name = "accesories-dictionary"
         win.set_default_size(@settings.window_width, @settings.window_height)
         win.set_size_request(MIN_WIDTH, MIN_HEIGHT)
+        Gtk::Window.set_default_icon_name(@app.application_id)
         if @development_mode
           win.add_css_class("devel")
         end
@@ -864,14 +920,15 @@ module Wordbook
         entry.primary_icon_activatable = false
         entry.primary_icon_sensitive = false
         entry.activates_default = true
-        entry.secondary_icon_tooltip_text = "Clear"
+        entry.secondary_icon_tooltip_text = _("Clear")
       end
     end
 
     def search_button
       @search_button ||= Gtk::Button.new(icon_name: "edit-find-symbolic").tap do |button|
         button.receives_default = true
-        button.tooltip_text = "Search"
+        button.tooltip_text = _("Search")
+        Utils.set_accessible_label(button, _("Search"))
         button.add_css_class("suggested-action")
       end
     end
@@ -879,7 +936,8 @@ module Wordbook
     def split_view_toggle_button
       @split_view_toggle_button ||= Gtk::ToggleButton.new.tap do |button|
         button.icon_name = "sidebar-show-symbolic"
-        button.tooltip_text = "Show History"
+        button.tooltip_text = _("Show History")
+        Utils.set_accessible_label(button, _("Show History"))
       end
     end
 
@@ -888,7 +946,8 @@ module Wordbook
         button.menu_model = MainMenu.new.build
         button.receives_default = true
         button.direction = :none
-        button.tooltip_text = "Main Menu"
+        button.tooltip_text = _("Main Menu")
+        Utils.set_accessible_label(button, _("Main Menu"))
       end
     end
 
@@ -911,8 +970,8 @@ module Wordbook
     def welcome_page
       @welcome_page ||= Adwaita::StatusPage.new.tap do |page|
         page.icon_name = "dev.mufeed.Wordbook-symbolic"
-        page.title = "Wordbook"
-        page.description = "Look up definitions of any English term"
+        page.title = _("Wordbook")
+        page.description = _("Look up definitions of any English term")
       end
     end
 
@@ -920,7 +979,7 @@ module Wordbook
       @search_fail_page ||= Adwaita::StatusPage.new.tap do |page|
         page.vexpand = true
         page.icon_name = "edit-find-symbolic"
-        page.title = "No definition found"
+        page.title = _("No definition found")
       end
     end
 
@@ -935,19 +994,23 @@ module Wordbook
     def db_error_page
       @db_error_page ||= Adwaita::StatusPage.new.tap do |page|
         page.icon_name = "dialog-error-symbolic"
-        page.title = "Database not found"
-        page.description = "Installation is incomplete. Please reinstall Wordbook."
+        page.title = _("Database not found")
+        page.description = _("Installation is incomplete. Please reinstall Wordbook.")
       end
     end
 
     def exit_button
-      @exit_button ||= Gtk::Button.new(label: "Exit").tap do |button|
+      @exit_button ||= Gtk::Button.new(label: _("Exit")).tap do |button|
         button.add_css_class("pill")
       end
     end
 
-    # Adwaita::Spinner is a 1.6 widget; Gtk's own spinner stands in where the
-    # bindings predate it.
+    # Adwaita::Spinner is a 1.6 widget, and Gtk::Spinner stands in where the
+    # bindings predate it. Neither branch has been looked at on screen — this
+    # port has never been rendered, because the environment it was written in
+    # has no display backend GTK can initialise (FINDINGS.md, defect 5), and I
+    # did not say so until a report made me.
+    # Upstream: `data/resources/ui/window.blp:277` (`Adw.Spinner`).
     def spinner_page = @spinner_page ||= new_spinner
 
     def new_spinner
@@ -962,7 +1025,7 @@ module Wordbook
     # be searched without leaving the page.
     def definition_extra_menu
       @definition_extra_menu ||= Gio::Menu.new.tap do |menu|
-        menu.append("Search Selected Text", "win.search-selected")
+        menu.append(_("Search Selected Text"), "win.search-selected")
       end
     end
 

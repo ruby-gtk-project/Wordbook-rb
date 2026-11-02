@@ -26,10 +26,14 @@ module Wordbook
       end
     end
 
-    # Adwaita::WrapBox is what upstream uses, and what lets the chips reflow
-    # onto as many lines as they need. It arrived in libadwaita 1.7, so where
-    # the bindings predate it a Gtk::FlowBox stands in: it wraps the same way,
-    # and with selection off its children behave like the chips they are.
+    # Adwaita::WrapBox is what upstream uses (`wordbook/window.py:1072`), and
+    # what lets the chips reflow onto as many lines as they need. It arrived in
+    # libadwaita 1.7, so where the bindings predate it a Gtk::FlowBox is built
+    # instead. I do not know whether the two reflow the same way, because this
+    # branch has never been on screen: Gtk::FlowBox allocates homogeneous rows
+    # by default and `max_children_per_line` set to the word count is my guess
+    # at the same layout, not a measurement. FINDINGS.md, defect 5, is why
+    # there is no screenshot.
     def wrap_box = @wrap_box ||= new_wrap_box
 
     def new_wrap_box

@@ -1,0 +1,259 @@
+# Translation in Occitan.
+# Copyright (C) YEAR THE PACKAGE'S COPYRIGHT HOLDER
+# This file is distributed under the same license as the wordbook package.
+# Quentin PAGÈS, 2025
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: wordbook\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2026-04-11 09:59+0530\n"
+"PO-Revision-Date: 2025-08-24 22:32+0200\n"
+"Last-Translator: Quentin PAGÈS\n"
+"Language-Team: \n"
+"Language: oc\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"X-Generator: Poedit 3.7\n"
+
+#: data/resources/ui/settings-window.blp:10
+msgid "Appearance"
+msgstr "Aparéncia"
+
+#: data/resources/ui/settings-window.blp:13
+msgid "Force Dark Mode"
+msgstr "Forçar lo mòde escur"
+
+#: data/resources/ui/settings-window.blp:18
+msgid "Behavior"
+msgstr "Compòrtament"
+
+#: data/resources/ui/settings-window.blp:21
+msgid "Live Search"
+msgstr "Recèrca en dirèct"
+
+#: data/resources/ui/settings-window.blp:22
+msgid "Show definition as the terms are typed in"
+msgstr "Afichar la definicion quand òm pica lo tèrme"
+
+#: data/resources/ui/settings-window.blp:26
+msgid "Double Click Search"
+msgstr "Recèrca en doble clic"
+
+#: data/resources/ui/settings-window.blp:27
+msgid "Search any word by double clicking on it"
+msgstr "Recercar quin mot que siá en lo doble clicant"
+
+#: data/resources/ui/settings-window.blp:31
+msgid "Auto Paste on Launch"
+msgstr "Pegament auto al lançament"
+
+#: data/resources/ui/settings-window.blp:32
+msgid "Automatically paste and search clipboard content on launch"
+msgstr "Pegar automaticament e recercar dins lo quichapapièrs al lançament"
+
+#: data/resources/ui/settings-window.blp:36
+msgid "Pronunciations Accent"
+msgstr "Accent de la prononciacion"
+
+#: data/resources/ui/shortcuts-dialog.blp:6
+msgctxt "shortcut window"
+msgid "General"
+msgstr "General"
+
+#: data/resources/ui/shortcuts-dialog.blp:9
+msgctxt "shortcut window"
+msgid "Show Shortcuts"
+msgstr "Afichar los acorchis"
+
+#: data/resources/ui/shortcuts-dialog.blp:14
+msgctxt "shortcut window"
+msgid "Preferences"
+msgstr "Preferéncias"
+
+#: data/resources/ui/shortcuts-dialog.blp:19
+msgctxt "shortcut window"
+msgid "Paste and Search"
+msgstr "Pegar e recercar"
+
+#: data/resources/ui/shortcuts-dialog.blp:24
+msgctxt "shortcut window"
+msgid "Random Word"
+msgstr "Mot aleatòri"
+
+#: data/resources/ui/shortcuts-dialog.blp:29
+msgctxt "shortcut window"
+msgid "Search Selected Text"
+msgstr "Recercar lo tèxte seleccionat"
+
+#: data/resources/ui/shortcuts-dialog.blp:34
+msgctxt "shortcut window"
+msgid "Toggle Sidebar"
+msgstr "Afichar o amagar lo panèl lateral"
+
+#: data/resources/ui/shortcuts-dialog.blp:39
+msgctxt "shortcut window"
+msgid "Show Menu"
+msgstr "Mostrar lo menú"
+
+#: data/resources/ui/shortcuts-dialog.blp:44
+msgctxt "shortcut window"
+msgid "Quit"
+msgstr "Quitar"
+
+#: data/resources/ui/window.blp:9
+msgid "Paste & Search"
+msgstr "Pegar e recercar"
+
+#: data/resources/ui/window.blp:14 wordbook/window.py:178
+msgid "Search Selected Text"
+msgstr "Recercar lo tèxte seleccionat"
+
+#: data/resources/ui/window.blp:19
+msgid "_Random Word"
+msgstr "_Mot aleatòri"
+
+#: data/resources/ui/window.blp:28
+msgid "_Preferences"
+msgstr "_Preferéncias"
+
+#: data/resources/ui/window.blp:33
+msgid "_Keyboard Shortcuts"
+msgstr "_Acorchis clavièr"
+
+#: data/resources/ui/window.blp:38
+msgid "_About Wordbook"
+msgstr "_A prepaus de Wordbook"
+
+#: data/resources/ui/window.blp:71
+msgid "History"
+msgstr "Istoric"
+
+#: data/resources/ui/window.blp:77 data/resources/ui/window.blp:81
+msgid "Show Favorites Only"
+msgstr "Mostrar sonque los favorits"
+
+#: data/resources/ui/window.blp:92 data/resources/ui/window.blp:96
+msgid "Clear History"
+msgstr "Escafar l’istoric"
+
+#: data/resources/ui/window.blp:132
+msgid "No recent searches or favorites"
+msgstr "Cap de recèrcas recentas o de favorits"
+
+# llm-generated
+#: data/resources/ui/window.blp:161
+msgid "Clear"
+msgstr "Escafar"
+
+#: data/resources/ui/window.blp:167 data/resources/ui/window.blp:170
+msgid "Search"
+msgstr "Recercar"
+
+#: data/resources/ui/window.blp:182 data/resources/ui/window.blp:185
+msgid "Show History"
+msgstr "Visualizar l'istoric"
+
+#: data/resources/ui/window.blp:194 data/resources/ui/window.blp:197
+msgid "Main Menu"
+msgstr "Menú principal"
+
+#: data/resources/ui/window.blp:216 wordbook/main.py:37 wordbook/main.py:98
+#: wordbook/main.py:152
+msgid "Wordbook"
+msgstr "Wordbook"
+
+#: data/resources/ui/window.blp:217
+msgid "Look up definitions of any English term"
+msgstr "Consultar la definicion de quin tèrme anglés que siá"
+
+#: data/resources/ui/window.blp:245
+msgid "No definition found"
+msgstr "Cap de definicion pas trobada"
+
+# llm-generated
+#: data/resources/ui/window.blp:260
+msgid "Database not found"
+msgstr "Basa de donadas pas trobada"
+
+# llm-generated
+#: data/resources/ui/window.blp:261
+msgid "Installation is incomplete. Please reinstall Wordbook."
+msgstr "L'installacion es incomplèta. Tornatz installar Wordbook."
+
+#: data/resources/ui/window.blp:264
+msgid "Exit"
+msgstr "Quitar"
+
+#: wordbook/main.py:154
+msgid "Look up definitions for words"
+msgstr "Consultar las definicions de mots"
+
+#: wordbook/main.py:156
+msgid "translator-credits"
+msgstr "Quentin PAGÈS"
+
+# llm-generated
+#: wordbook/main.py:159
+msgid "Source Code"
+msgstr "Còdi sorgent"
+
+#: wordbook/main.py:161
+msgid "Copyright © 2016-2026 Mufeed Ali"
+msgstr "Copyright © 2016-2026 Mufeed Ali"
+
+#: wordbook/window.py:278
+msgid "Wordlist Loading"
+msgstr "Cargament de la lista de mots"
+
+#: wordbook/window.py:279
+msgid "The word list is still loading. Please try again in a moment."
+msgstr "La lista de mots es encara a cargar. Tornatz ensajar dins un moment."
+
+#: wordbook/window.py:513
+msgid "History cleared"
+msgstr "Istoric escafat"
+
+#: wordbook/window.py:514
+msgid "Undo"
+msgstr "Desfar"
+
+#: wordbook/window.py:674
+msgid "Listen to Pronunciation"
+msgstr "Escotar la prononciacion"
+
+#: wordbook/window.py:815
+msgid "Toggle Favorite"
+msgstr "Alternar marcatge en favorit per la seleccion"
+
+#: wordbook/window.py:872
+msgid "Dismiss"
+msgstr "Ignorar"
+
+#: wordbook/window.py:898
+msgid "Invalid input"
+msgstr "Entrada incorrècta"
+
+#: wordbook/window.py:899
+msgid "Nothing definable was found in your search input"
+msgstr "Res de definible es estat trobat dins vòstra recèrca"
+
+#~ msgid "Setting things up…"
+#~ msgstr "Configuracions de las causas…"
+
+#~ msgid "Downloading WordNet…"
+#~ msgstr "Telecargament de WordNet…"
+
+#~ msgid "Download failed"
+#~ msgstr "Fracàs del telecargament"
+
+#~ msgid "Retry"
+#~ msgstr "Tornar ensajar"
+
+#~ msgid "Building Database…"
+#~ msgstr "Construccion de la basa de donadas…"
+
+#~ msgid "Ready."
+#~ msgstr "Lèst."

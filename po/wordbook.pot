@@ -1,0 +1,236 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) YEAR THE PACKAGE'S COPYRIGHT HOLDER
+# This file is distributed under the same license as the wordbook package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: wordbook\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2026-04-11 09:59+0530\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"Language: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+#: data/resources/ui/settings-window.blp:10
+msgid "Appearance"
+msgstr ""
+
+#: data/resources/ui/settings-window.blp:13
+msgid "Force Dark Mode"
+msgstr ""
+
+#: data/resources/ui/settings-window.blp:18
+msgid "Behavior"
+msgstr ""
+
+#: data/resources/ui/settings-window.blp:21
+msgid "Live Search"
+msgstr ""
+
+#: data/resources/ui/settings-window.blp:22
+msgid "Show definition as the terms are typed in"
+msgstr ""
+
+#: data/resources/ui/settings-window.blp:26
+msgid "Double Click Search"
+msgstr ""
+
+#: data/resources/ui/settings-window.blp:27
+msgid "Search any word by double clicking on it"
+msgstr ""
+
+#: data/resources/ui/settings-window.blp:31
+msgid "Auto Paste on Launch"
+msgstr ""
+
+#: data/resources/ui/settings-window.blp:32
+msgid "Automatically paste and search clipboard content on launch"
+msgstr ""
+
+#: data/resources/ui/settings-window.blp:36
+msgid "Pronunciations Accent"
+msgstr ""
+
+#: data/resources/ui/shortcuts-dialog.blp:6
+msgctxt "shortcut window"
+msgid "General"
+msgstr ""
+
+#: data/resources/ui/shortcuts-dialog.blp:9
+msgctxt "shortcut window"
+msgid "Show Shortcuts"
+msgstr ""
+
+#: data/resources/ui/shortcuts-dialog.blp:14
+msgctxt "shortcut window"
+msgid "Preferences"
+msgstr ""
+
+#: data/resources/ui/shortcuts-dialog.blp:19
+msgctxt "shortcut window"
+msgid "Paste and Search"
+msgstr ""
+
+#: data/resources/ui/shortcuts-dialog.blp:24
+msgctxt "shortcut window"
+msgid "Random Word"
+msgstr ""
+
+#: data/resources/ui/shortcuts-dialog.blp:29
+msgctxt "shortcut window"
+msgid "Search Selected Text"
+msgstr ""
+
+#: data/resources/ui/shortcuts-dialog.blp:34
+msgctxt "shortcut window"
+msgid "Toggle Sidebar"
+msgstr ""
+
+#: data/resources/ui/shortcuts-dialog.blp:39
+msgctxt "shortcut window"
+msgid "Show Menu"
+msgstr ""
+
+#: data/resources/ui/shortcuts-dialog.blp:44
+msgctxt "shortcut window"
+msgid "Quit"
+msgstr ""
+
+#: data/resources/ui/window.blp:9
+msgid "Paste & Search"
+msgstr ""
+
+#: data/resources/ui/window.blp:14 wordbook/window.py:178
+msgid "Search Selected Text"
+msgstr ""
+
+#: data/resources/ui/window.blp:19
+msgid "_Random Word"
+msgstr ""
+
+#: data/resources/ui/window.blp:28
+msgid "_Preferences"
+msgstr ""
+
+#: data/resources/ui/window.blp:33
+msgid "_Keyboard Shortcuts"
+msgstr ""
+
+#: data/resources/ui/window.blp:38
+msgid "_About Wordbook"
+msgstr ""
+
+#: data/resources/ui/window.blp:71
+msgid "History"
+msgstr ""
+
+#: data/resources/ui/window.blp:77 data/resources/ui/window.blp:81
+msgid "Show Favorites Only"
+msgstr ""
+
+#: data/resources/ui/window.blp:92 data/resources/ui/window.blp:96
+msgid "Clear History"
+msgstr ""
+
+#: data/resources/ui/window.blp:132
+msgid "No recent searches or favorites"
+msgstr ""
+
+#: data/resources/ui/window.blp:161
+msgid "Clear"
+msgstr ""
+
+#: data/resources/ui/window.blp:167 data/resources/ui/window.blp:170
+msgid "Search"
+msgstr ""
+
+#: data/resources/ui/window.blp:182 data/resources/ui/window.blp:185
+msgid "Show History"
+msgstr ""
+
+#: data/resources/ui/window.blp:194 data/resources/ui/window.blp:197
+msgid "Main Menu"
+msgstr ""
+
+#: data/resources/ui/window.blp:216 wordbook/main.py:37 wordbook/main.py:98
+#: wordbook/main.py:152
+msgid "Wordbook"
+msgstr ""
+
+#: data/resources/ui/window.blp:217
+msgid "Look up definitions of any English term"
+msgstr ""
+
+#: data/resources/ui/window.blp:245
+msgid "No definition found"
+msgstr ""
+
+#: data/resources/ui/window.blp:260
+msgid "Database not found"
+msgstr ""
+
+#: data/resources/ui/window.blp:261
+msgid "Installation is incomplete. Please reinstall Wordbook."
+msgstr ""
+
+#: data/resources/ui/window.blp:264
+msgid "Exit"
+msgstr ""
+
+#: wordbook/main.py:154
+msgid "Look up definitions for words"
+msgstr ""
+
+#: wordbook/main.py:156
+msgid "translator-credits"
+msgstr ""
+
+#: wordbook/main.py:159
+msgid "Source Code"
+msgstr ""
+
+#: wordbook/main.py:161
+msgid "Copyright © 2016-2026 Mufeed Ali"
+msgstr ""
+
+#: wordbook/window.py:278
+msgid "Wordlist Loading"
+msgstr ""
+
+#: wordbook/window.py:279
+msgid "The word list is still loading. Please try again in a moment."
+msgstr ""
+
+#: wordbook/window.py:513
+msgid "History cleared"
+msgstr ""
+
+#: wordbook/window.py:514
+msgid "Undo"
+msgstr ""
+
+#: wordbook/window.py:674
+msgid "Listen to Pronunciation"
+msgstr ""
+
+#: wordbook/window.py:815
+msgid "Toggle Favorite"
+msgstr ""
+
+#: wordbook/window.py:872
+msgid "Dismiss"
+msgstr ""
+
+#: wordbook/window.py:898
+msgid "Invalid input"
+msgstr ""
+
+#: wordbook/window.py:899
+msgid "Nothing definable was found in your search input"
+msgstr ""

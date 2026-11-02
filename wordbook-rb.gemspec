@@ -78,7 +78,12 @@ Gem::Specification.new do |spec|
     *enumerate_package_files.call("exe"),
     # Extra package files configured by .structuredmerge/kettle-jem.yml
     *enumerate_package_glob.call(File.join(gemspec_root, "data/**/*")),
-    *enumerate_package_glob.call(File.join(gemspec_root, "po/**/*"))
+    *enumerate_package_glob.call(File.join(gemspec_root, "po/**/*")),
+    # The compiled catalogues. Build output (gitignored), produced by
+    # `rake gettext:mo:update` and packaged so an installed gem can find a
+    # translation at all: Translations::LOCALE_DIR looks for
+    # locale/<lang>/LC_MESSAGES/wordbook.mo next to lib/.
+    *enumerate_package_glob.call(File.join(gemspec_root, "locale/**/*"))
   ]
   spec.rdoc_options += [
     "--title",
@@ -95,6 +100,14 @@ Gem::Specification.new do |spec|
   # Listed files are the relative paths from bindir above.
   spec.executables = ["wordbook", "wordbook-search-provider"]
   spec.require_paths = ["lib"]
+
+  # Runtime dependencies. Without these `gem install wordbook-rb` installs an
+  # app that raises LoadError on `require "gtk4"` at
+  # lib/wordbook/application.rb:3.
+  spec.add_dependency("adwaita", "~> 4.3")                                          # libadwaita widgets
+  spec.add_dependency("gettext", "~> 3.5")                                          # upstream's message catalogue
+  spec.add_dependency("gtk4", "~> 4.3")                                             # the toolkit
+  spec.add_dependency("sqlite3", "~> 2.0")                                          # the bundled WordNet database
 
   # NOTE: It is preferable to list development dependencies in the gemspec due to increased
   #       visibility and discoverability.

@@ -1,0 +1,3 @@
+[D-BUS Service]
+Name=dev.mufeed.Wordbook.SearchProvider
+Exec=@bindir@/wordbook-search-provider

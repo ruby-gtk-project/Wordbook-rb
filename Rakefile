@@ -170,3 +170,123 @@ rescue LoadError
     warn("NOTE: stone_checksums isn't installed, or is disabled for #{RUBY_VERSION} in the current environment")
   end
 end
+
+### TRANSLATION TASKS
+# po/ is upstream's donated catalogue — 15 languages, 52 messages each, no
+# fuzzies — carried across unchanged. Nothing here rewrites a .po except
+# rmsgmerge through gettext:po:update, which is run only when the message set
+# genuinely changes. gettext:mo:update compiles
+# locale/<lang>/LC_MESSAGES/wordbook.mo, which is build output and gitignored.
+#
+# The domain is `wordbook`, from upstream's po/meson.build. The locales come
+# from po/LINGUAS rather than from Dir["po/*.po"], so a language that loses its
+# file loses it loudly.
+begin
+  require "gettext/tools/task"
+
+  GetText::Tools::Task.define do |task|
+    task.domain = "wordbook"
+    task.package_name = "wordbook"
+    task.package_version = Module.new.tap { |mod|
+      Kernel.load("#{__dir__}/lib/wordbook/rb/version.rb", mod)
+    }::Wordbook::Rb::Version::VERSION
+    task.files = Dir.glob("lib/**/*.rb") + Dir.glob("exe/*")
+    task.po_base_directory = "po"
+    task.mo_base_directory = "locale"
+    task.locales = File.read("po/LINGUAS").split
+    # The gem's Ruby parser drops translator comments unless asked for them.
+    task.xgettext_options = ["--add-comments=Translators"]
+  end
+rescue LoadError
+  desc("(stub) gettext:mo:update is unavailable")
+  task("gettext:mo:update") do
+    warn("NOTE: the gettext gem isn't installed in the current environment")
+  end
+end
+
+### DATA INSTALLATION
+# The desktop entry, the metainfo, the icons and the GNOME Shell search
+# provider files have to land in XDG locations for the app to have a launcher,
+# an icon, an entry in Software and a search provider the shell knows about.
+# `rake install:data` does that for a user-level install; flake.nix does the
+# same thing for the packaged build.
+#
+# The desktop entry and the metainfo are translated here rather than at build
+# time: GNU msgfmt merges po/ into them (`--desktop` and `--xml`), which is
+# what meson's i18n.merge_file does for upstream.
+namespace :install do
+  desc "Install the desktop entry, metainfo, icons and search provider files under PREFIX (default ~/.local)"
+  task :data do
+    prefix = ENV.fetch("PREFIX", File.expand_path("~/.local"))
+    share = File.join(prefix, "share")
+    require "fileutils"
+
+    FileUtils.mkdir_p(
+      [
+        File.join(share, "applications"),
+        File.join(share, "metainfo"),
+        File.join(share, "icons/hicolor/scalable/apps"),
+        File.join(share, "icons/hicolor/symbolic/apps"),
+        File.join(share, "gnome-shell/search-providers"),
+        File.join(share, "dbus-1/services"),
+      ],
+    )
+
+    sh(
+      "msgfmt",
+      "--desktop",
+      "--template=data/dev.mufeed.Wordbook.desktop.in",
+      "-d",
+      "po",
+      "-o",
+      File.join(share, "applications/dev.mufeed.Wordbook.desktop"),
+    )
+    sh(
+      "msgfmt",
+      "--xml",
+      "--template=data/dev.mufeed.Wordbook.metainfo.xml.in",
+      "-d",
+      "po",
+      "-o",
+      File.join(share, "metainfo/dev.mufeed.Wordbook.metainfo.xml"),
+    )
+
+    FileUtils.cp(
+      "data/icons/dev.mufeed.Wordbook.svg",
+      File.join(share, "icons/hicolor/scalable/apps/dev.mufeed.Wordbook.svg"),
+    )
+    FileUtils.cp(
+      "data/icons/dev.mufeed.Wordbook-symbolic.svg",
+      File.join(share, "icons/hicolor/symbolic/apps/dev.mufeed.Wordbook-symbolic.svg"),
+    )
+    FileUtils.cp(
+      "data/dev.mufeed.Wordbook.SearchProvider.ini",
+      File.join(share, "gnome-shell/search-providers/dev.mufeed.Wordbook.SearchProvider.ini"),
+    )
+    File.write(
+      File.join(share, "dbus-1/services/dev.mufeed.Wordbook.SearchProvider.service"),
+      File.read("data/dev.mufeed.Wordbook.SearchProvider.service.in")
+          .gsub("@bindir@", File.join(prefix, "bin")),
+    )
+
+    # The compiled catalogues, where bindtextdomain's last candidate looks for
+    # them. `rake gettext:mo:update` is what builds them.
+    File.read("po/LINGUAS").split.each do |lang|
+      "locale/#{lang}/LC_MESSAGES/wordbook.mo".then do |mo|
+        if File.exist?(mo)
+          File.join(
+            share,
+            "locale",
+            lang,
+            "LC_MESSAGES",
+          ).then do |dir|
+            FileUtils.mkdir_p(dir)
+            FileUtils.cp(mo, File.join(dir, "wordbook.mo"))
+          end
+        else
+          warn("NOTE: #{mo} is missing; run `rake gettext:mo:update` first")
+        end
+      end
+    end
+  end
+end

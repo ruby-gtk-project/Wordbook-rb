@@ -3,6 +3,7 @@
 require "adwaita"
 
 require_relative "settings"
+require_relative "translations"
 
 module Wordbook
   # SettingsDialog is the preferences dialog: one appearance switch and the
@@ -15,6 +16,8 @@ module Wordbook
   # pronunciations) call back into it.
   #
   class SettingsDialog < Adwaita::PreferencesDialog
+    include Translations
+
     CONTENT_WIDTH = 450
     CONTENT_HEIGHT = 350
 
@@ -22,7 +25,6 @@ module Wordbook
       super()
       @parent = parent
       @settings = settings
-      self.title = "Preferences"
       self.content_width = CONTENT_WIDTH
       self.content_height = CONTENT_HEIGHT
     end
@@ -72,46 +74,46 @@ module Wordbook
 
     def appearance_group
       @appearance_group ||= Adwaita::PreferencesGroup.new.tap do |group|
-        group.title = "Appearance"
+        group.title = _("Appearance")
       end
     end
 
     def behavior_group
       @behavior_group ||= Adwaita::PreferencesGroup.new.tap do |group|
-        group.title = "Behavior"
+        group.title = _("Behavior")
       end
     end
 
     def dark_ui_switch
       @dark_ui_switch ||= Adwaita::SwitchRow.new.tap do |row|
-        row.title = "Force Dark Mode"
+        row.title = _("Force Dark Mode")
       end
     end
 
     def live_search_switch
       @live_search_switch ||= Adwaita::SwitchRow.new.tap do |row|
-        row.title = "Live Search"
-        row.subtitle = "Show definition as the terms are typed in"
+        row.title = _("Live Search")
+        row.subtitle = _("Show definition as the terms are typed in")
       end
     end
 
     def double_click_switch
       @double_click_switch ||= Adwaita::SwitchRow.new.tap do |row|
-        row.title = "Double Click Search"
-        row.subtitle = "Search any word by double clicking on it"
+        row.title = _("Double Click Search")
+        row.subtitle = _("Search any word by double clicking on it")
       end
     end
 
     def auto_paste_switch
       @auto_paste_switch ||= Adwaita::SwitchRow.new.tap do |row|
-        row.title = "Auto Paste on Launch"
-        row.subtitle = "Automatically paste and search clipboard content on launch"
+        row.title = _("Auto Paste on Launch")
+        row.subtitle = _("Automatically paste and search clipboard content on launch")
       end
     end
 
     def pronunciations_accent_row
       @pronunciations_accent_row ||= Adwaita::ComboRow.new.tap do |row|
-        row.title = "Pronunciations Accent"
+        row.title = _("Pronunciations Accent")
         row.model = Gtk::StringList.new(PronunciationAccent.display_names)
       end
     end
@@ -133,20 +135,20 @@ module Wordbook
 
       # With live search on there is nothing to press, so the search button
       # goes away and the completion popover takes over; with it off the button
-      # comes back and becomes the window's default widget again.
+      # comes back. The window's default widget is the search button either
+      # way, as the blp template declares it.
       def apply_live_search
         live_search_switch.active?.then do |enabled|
           @parent.completion_enabled = !enabled
           @parent.search_button.visible = !enabled
-          unless enabled
-            @parent.default_widget = @parent.search_button
-          end
           @settings.live_search = enabled
         end
       end
 
       # Re-rendering the current page is what makes the new accent audible and
-      # visible immediately; it deliberately does not touch the history.
+      # visible immediately; it does not touch the history, which is what
+      # upstream's refresh_current_search_pronunciations(update_history=False)
+      # does.
       def apply_accent
         PronunciationAccent.from_index(pronunciations_accent_row.selected).then do |accent|
           unless accent == @settings.pronunciations_accent

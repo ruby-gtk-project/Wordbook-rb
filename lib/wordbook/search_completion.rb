@@ -11,11 +11,15 @@ module Wordbook
   # live search is off — with live search on, the definitions themselves are
   # the feedback, which is why the window disables this.
   #
-  # One simplification: upstream parents the popover to the window and then
-  # computes the entry's bounds within it on every update to point the popover
-  # at the entry. Parenting it to the entry instead puts it in the same place
-  # without the geometry pass; the width still has to be synced, since a
-  # popover is otherwise only as wide as its contents.
+  # The popover is parented to the window and pointed at the entry on every
+  # update, which is what upstream does
+  # (`wordbook/search_completion.py:45,122-135`). The first version of this
+  # file parented it to the entry and synced only its width, and claimed that
+  # put it in the same place — a claim about where a widget lands made by
+  # someone who had never seen it land. Where it actually lands is still
+  # unobserved: this port has never been rendered (FINDINGS.md, defect 5), so
+  # the geometry below is upstream's arithmetic carried across rather than a
+  # measured match.
   #
   class SearchCompletion
     ENTRY_CLASS = "completion-entry"
@@ -34,7 +38,7 @@ module Wordbook
     def build
       popover.tap do |pop|
         pop.child = scroller
-        pop.set_parent(@entry)
+        pop.set_parent(@parent)
         pop.signal_connect("closed") { entry_active(false) }
 
         scroller.tap do |window|
@@ -170,11 +174,67 @@ module Wordbook
 
       def popup_with(items)
         items.each { |item| listbox.append(row_for(item)) }
-        scroller.set_size_request([@entry.width, 1].max, -1)
+        if sync_geometry
+          present_popover
+        else
+          hide
+        end
+      end
+
+      def present_popover
         entry_active(true)
         popover.popup
         popover.present
         @entry.grab_focus_without_selecting
+      end
+
+      # Upstream's _sync_geometry. The popover belongs to the window, so it is
+      # pointed at a one-pixel-tall rectangle along the entry's bottom edge,
+      # with the offset zeroed so GTK does not shift it again. A
+      # compute_bounds that fails means the entry is not currently in the
+      # window's coordinate space, and upstream hides the popover rather than
+      # leaving it pointed at the last place the entry was.
+      def sync_geometry
+        entry_bounds.then do |bounds|
+          if bounds
+            point_at(bounds)
+          else
+            false
+          end
+        end
+      end
+
+      # compute_bounds returns the rectangle, or a [success, rectangle] pair
+      # depending on how the binding unpacks its out parameter; both shapes
+      # mean the same thing.
+      def entry_bounds
+        @entry.compute_bounds(@parent).then do |result|
+          if result.is_a?(Array)
+            successful_bounds(result)
+          else
+            result
+          end
+        end
+      end
+
+      def successful_bounds(result)
+        if result.first
+          result.last
+        end
+      end
+
+      def point_at(bounds)
+        [bounds.width.round, @entry.width, 1].max.then do |width|
+          popover.set_offset(0, 0)
+          popover.pointing_to = Gdk::Rectangle.new(
+            bounds.x.round,
+            (bounds.y + bounds.height).round - 1,
+            width,
+            1,
+          )
+          scroller.set_size_request(width, -1)
+          true
+        end
       end
 
       def remove_rows

@@ -60,13 +60,11 @@ eval_gemfile "gemfiles/modular/x_std_libs.gemfile"
 # See unlocked_deps appraisal for more details on irb inclusion
 gem "irb", "~> 1.17" # ruby >= 2.7
 gem "gem_kit"
-gem "gtk4"
 
 group :development do
   gem "rubocop"
 end
-gem "adwaita"
 
-# The bundled WordNet database is the SQLite file the Python `wn` library
-# reads; lib/wordbook/base.rb queries it directly.
-gem "sqlite3"
+# gtk4, adwaita, sqlite3 and gettext are runtime dependencies and are declared
+# in wordbook-rb.gemspec, which `gemspec` above pulls in. Listing them here as
+# well would declare them twice.

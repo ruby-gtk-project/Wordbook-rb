@@ -1,0 +1,15 @@
+data/dev.mufeed.Wordbook.desktop.in
+data/dev.mufeed.Wordbook.metainfo.xml.in
+exe/wordbook
+exe/wordbook-search-provider
+lib/wordbook/about_dialog.rb
+lib/wordbook/application.rb
+lib/wordbook/error_dialog.rb
+lib/wordbook/history_row.rb
+lib/wordbook/history_sidebar.rb
+lib/wordbook/main_menu.rb
+lib/wordbook/pronunciation_row.rb
+lib/wordbook/settings_dialog.rb
+lib/wordbook/shortcuts_dialog.rb
+lib/wordbook/translations.rb
+lib/wordbook/window.rb

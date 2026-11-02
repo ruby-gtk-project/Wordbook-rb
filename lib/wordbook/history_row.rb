@@ -3,6 +3,7 @@
 require "adwaita"
 
 require_relative "history_object"
+require_relative "translations"
 
 module Wordbook
   # HistoryRow is a row in the history sidebar: the term, ellipsized, and a
@@ -15,6 +16,8 @@ module Wordbook
   # upstream reaches the row with get_ancestor instead.
   #
   class HistoryRow
+    include Translations
+
     STARRED = "starred-symbolic"
     UNSTARRED = "non-starred-symbolic"
 
@@ -95,7 +98,7 @@ module Wordbook
     def favorite_button
       @favorite_button ||= Gtk::Button.new.tap do |button|
         button.icon_name = icon_name
-        button.tooltip_text = "Toggle Favorite"
+        button.tooltip_text = _("Toggle Favorite")
         button.valign = :center
         button.margin_top = 4
         button.margin_bottom = 4

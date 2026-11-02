@@ -1,0 +1,288 @@
+# Turkish translation of dev.mufeed.Wordbook.
+# Copyright (C) 2024 dev.mufeed.Wordbook's COPYRIGHT HOLDER
+# This file is distributed under the same license as the dev.mufeed.Wordbook package.
+#
+# Sabri Ünal <libreajans@gmail.com>, 2023.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: dev.mufeed.Wordbook\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2026-04-11 09:59+0530\n"
+"PO-Revision-Date: 2023-05-25 17:42+0300\n"
+"Last-Translator: Sabri Ünal <libreajans@gmail.com>\n"
+"Language-Team: Turkish <takim@gnome.org.tr>\n"
+"Language: tr\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+"X-Generator: Poedit 3.2.2\n"
+
+#: data/resources/ui/settings-window.blp:10
+msgid "Appearance"
+msgstr "Görünüm"
+
+#: data/resources/ui/settings-window.blp:13
+msgid "Force Dark Mode"
+msgstr "Karanlık Kipi Zorla"
+
+#: data/resources/ui/settings-window.blp:18
+msgid "Behavior"
+msgstr "Davranış"
+
+#: data/resources/ui/settings-window.blp:21
+msgid "Live Search"
+msgstr "Canlı Arama"
+
+#: data/resources/ui/settings-window.blp:22
+msgid "Show definition as the terms are typed in"
+msgstr "Terimler yazılırken tanımı göster"
+
+#: data/resources/ui/settings-window.blp:26
+msgid "Double Click Search"
+msgstr "Çift Tık Arama"
+
+#: data/resources/ui/settings-window.blp:27
+msgid "Search any word by double clicking on it"
+msgstr "Üzerine çift tıklayarak herhangi bir kelimeyi ara"
+
+# llm-generated
+#: data/resources/ui/settings-window.blp:31
+msgid "Auto Paste on Launch"
+msgstr "Başlangıçta otomatik yapıştır"
+
+# llm-generated
+#: data/resources/ui/settings-window.blp:32
+msgid "Automatically paste and search clipboard content on launch"
+msgstr "Başlangıçta panodaki içeriği otomatik olarak yapıştır ve ara"
+
+#: data/resources/ui/settings-window.blp:36
+msgid "Pronunciations Accent"
+msgstr "Telaffuz Aksanı"
+
+#: data/resources/ui/shortcuts-dialog.blp:6
+msgctxt "shortcut window"
+msgid "General"
+msgstr "Genel"
+
+#: data/resources/ui/shortcuts-dialog.blp:9
+msgctxt "shortcut window"
+msgid "Show Shortcuts"
+msgstr "Kısayolları Göster"
+
+#: data/resources/ui/shortcuts-dialog.blp:14
+msgctxt "shortcut window"
+msgid "Preferences"
+msgstr "Tercihler"
+
+#: data/resources/ui/shortcuts-dialog.blp:19
+msgctxt "shortcut window"
+msgid "Paste and Search"
+msgstr "Yapıştır ve Ara"
+
+#: data/resources/ui/shortcuts-dialog.blp:24
+msgctxt "shortcut window"
+msgid "Random Word"
+msgstr "Rastgele Sözcük"
+
+#: data/resources/ui/shortcuts-dialog.blp:29
+msgctxt "shortcut window"
+msgid "Search Selected Text"
+msgstr "Seçilen Metni Ara"
+
+# llm-generated
+#: data/resources/ui/shortcuts-dialog.blp:34
+msgctxt "shortcut window"
+msgid "Toggle Sidebar"
+msgstr "Kenar çubuğunu aç/kapat"
+
+# llm-generated
+#: data/resources/ui/shortcuts-dialog.blp:39
+msgctxt "shortcut window"
+msgid "Show Menu"
+msgstr "Menüyü göster"
+
+# llm-generated
+#: data/resources/ui/shortcuts-dialog.blp:44
+msgctxt "shortcut window"
+msgid "Quit"
+msgstr "Çık"
+
+#: data/resources/ui/window.blp:9
+msgid "Paste & Search"
+msgstr "Yapıştır ve Ara"
+
+#: data/resources/ui/window.blp:14 wordbook/window.py:178
+msgid "Search Selected Text"
+msgstr "Seçilen Metni Ara"
+
+#: data/resources/ui/window.blp:19
+msgid "_Random Word"
+msgstr "_Rastgele Sözcük"
+
+#: data/resources/ui/window.blp:28
+msgid "_Preferences"
+msgstr "Te_rcihler"
+
+#: data/resources/ui/window.blp:33
+msgid "_Keyboard Shortcuts"
+msgstr "_Klavye Kısayolları"
+
+#: data/resources/ui/window.blp:38
+msgid "_About Wordbook"
+msgstr "Wordbook _Hakkında"
+
+#: data/resources/ui/window.blp:71
+msgid "History"
+msgstr "Geçmiş"
+
+# llm-generated
+#: data/resources/ui/window.blp:77 data/resources/ui/window.blp:81
+msgid "Show Favorites Only"
+msgstr "Yalnızca favorileri göster"
+
+# llm-generated
+#: data/resources/ui/window.blp:92 data/resources/ui/window.blp:96
+msgid "Clear History"
+msgstr "Geçmişi temizle"
+
+# llm-generated
+#: data/resources/ui/window.blp:132
+msgid "No recent searches or favorites"
+msgstr "Son aramalar veya favoriler yok"
+
+# llm-generated
+#: data/resources/ui/window.blp:161
+msgid "Clear"
+msgstr "Temizle"
+
+#: data/resources/ui/window.blp:167 data/resources/ui/window.blp:170
+msgid "Search"
+msgstr "Ara"
+
+#: data/resources/ui/window.blp:182 data/resources/ui/window.blp:185
+msgid "Show History"
+msgstr "Geçmişi Göster"
+
+# llm-generated
+#: data/resources/ui/window.blp:194 data/resources/ui/window.blp:197
+msgid "Main Menu"
+msgstr "Ana Menü"
+
+#: data/resources/ui/window.blp:216 wordbook/main.py:37 wordbook/main.py:98
+#: wordbook/main.py:152
+msgid "Wordbook"
+msgstr "Wordbook"
+
+#: data/resources/ui/window.blp:217
+msgid "Look up definitions of any English term"
+msgstr "Herhangi bir İngilizce terimin tanımını ara"
+
+#: data/resources/ui/window.blp:245
+msgid "No definition found"
+msgstr "Tanım bulunamadı"
+
+# llm-generated
+#: data/resources/ui/window.blp:260
+msgid "Database not found"
+msgstr "Veritabanı bulunamadı"
+
+# llm-generated
+#: data/resources/ui/window.blp:261
+msgid "Installation is incomplete. Please reinstall Wordbook."
+msgstr "Kurulum eksik. Lütfen Wordbook'ı yeniden yükleyin."
+
+#: data/resources/ui/window.blp:264
+msgid "Exit"
+msgstr "Çıkış"
+
+#: wordbook/main.py:154
+msgid "Look up definitions for words"
+msgstr "Herhangi bir İngilizce terimin tanımını ara."
+
+#: wordbook/main.py:156
+msgid "translator-credits"
+msgstr "Sabri Ünal <libreajans@gmail.com>"
+
+# llm-generated
+#: wordbook/main.py:159
+msgid "Source Code"
+msgstr "Kaynak kodu"
+
+#: wordbook/main.py:161
+msgid "Copyright © 2016-2026 Mufeed Ali"
+msgstr "Telif Hakkı © 2016-2026 Mufeed Ali"
+
+# llm-generated
+#: wordbook/window.py:278
+msgid "Wordlist Loading"
+msgstr "Sözcük listesi yükleniyor"
+
+# llm-generated
+#: wordbook/window.py:279
+msgid "The word list is still loading. Please try again in a moment."
+msgstr ""
+"Sözcük listesi hâlâ yükleniyor. Lütfen kısa süre sonra yeniden deneyin."
+
+# llm-generated
+#: wordbook/window.py:513
+msgid "History cleared"
+msgstr "Geçmiş temizlendi"
+
+# llm-generated
+#: wordbook/window.py:514
+msgid "Undo"
+msgstr "Geri al"
+
+#: wordbook/window.py:674
+msgid "Listen to Pronunciation"
+msgstr "Telaffuzu Dinle"
+
+# llm-generated
+#: wordbook/window.py:815
+msgid "Toggle Favorite"
+msgstr "Favoriyi aç/kapat"
+
+# llm-generated
+#: wordbook/window.py:872
+msgid "Dismiss"
+msgstr "Kapat"
+
+#: wordbook/window.py:898
+msgid "Invalid input"
+msgstr "Geçersiz girdi"
+
+#: wordbook/window.py:899
+msgid "Nothing definable was found in your search input"
+msgstr "Arama girdinizde tanımlanabilir hiçbir şey bulunamadı"
+
+#~ msgid "Setting things up…"
+#~ msgstr "Wordbook ayarlanıyor…"
+
+#~ msgid "Downloading WordNet…"
+#~ msgstr "WordNet İndiriliyor…"
+
+#~ msgid "Download failed"
+#~ msgstr "İndirilemedi"
+
+#~ msgid "Retry"
+#~ msgstr "Yeniden Dene"
+
+#~ msgid "Building Database…"
+#~ msgstr "Veritabanı inşa ediliyor…"
+
+#~ msgid "Ready."
+#~ msgstr "Hazır."
+
+#~ msgid "/Pronunciation/"
+#~ msgstr "/Telaffuz/"
+
+#~ msgid "Re-downloading WordNet database"
+#~ msgstr "WordNet veri tabanı yeniden indiriliyor"
+
+#~ msgid "Just a database upgrade."
+#~ msgstr "Sadece veri tabanı güncellemesi."
+
+#~ msgid "This shouldn't happen too often."
+#~ msgstr "Bu çok sık olmamalı."

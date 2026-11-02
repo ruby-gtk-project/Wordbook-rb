@@ -10,6 +10,7 @@ require_relative "rb/version"
 require_relative "settings"
 require_relative "shortcuts_dialog"
 require_relative "style"
+require_relative "translations"
 require_relative "utils"
 require_relative "window"
 
@@ -17,22 +18,40 @@ module Wordbook
   # Application manages the window, the application-wide actions and the
   # command line, ported from upstream's wordbook/main.py.
   #
-  # Three deliberate differences:
+  # I replaced GLib's option parser with a hand-written one. The first version
+  # of it mis-read `wordbook --look-up` with no term (it searched for the empty
+  # string) and mis-read a search term spelled like a flag, because I wrote a
+  # paragraph calling that a deliberate difference instead of writing the code.
+  # The parser below consumes arguments by position, so `--look-up -i` looks up
+  # the term "-i" and a missing term is reported rather than searched; GOption
+  # does both of those.
+  # Upstream: `wordbook/main.py:43-74` — four `add_main_option` entries, parsed
+  # by GOption. Port: `parse` below.
   #
-  #   * Adwaita::Application is unusable from Ruby, so this is a
-  #     Gtk::Application. Adwaita's style manager is still what sets the colour
-  #     scheme, and the stylesheet is installed from Style rather than loaded
-  #     from a gresource bundle, which this port does not build.
-  #   * the four command line options are parsed from the argument vector
-  #     instead of being declared with add_main_option and read back out of a
-  #     GLib::VariantDict — the same flags, including their short forms.
-  #   * SIGINT and SIGTERM are trapped with Ruby's own Signal.trap rather than
-  #     with GLib.unix_signal_add.
+  # `Gtk::Application` stands where upstream has `Adw.Application`
+  # (FINDINGS.md, defect 1: `Adwaita::Application` cannot be constructed from
+  # these bindings). Adwaita's style manager still sets the colour scheme. The
+  # stylesheet is installed from Style rather than loaded out of a gresource
+  # bundle, which this port does not build — so the icons that upstream finds
+  # through the resource base path are found through the icon theme instead,
+  # from the SVGs in data/icons; see COMPONENT_PARITY.md.
+  #
+  # SIGINT and SIGTERM are trapped with Ruby's own Signal.trap rather than with
+  # GLib.unix_signal_add.
   #
   class Application
-    APP_ID = "dev.mufeed.Wordbook"
-    APP_NAME = "Wordbook"
+    include Translations
 
+    APP_ID = "dev.mufeed.Wordbook"
+    APP_NAME = N_("Wordbook")
+
+    # The single source of truth for the accelerators: installed here and read
+    # back by the shortcuts dialog, which cannot resolve them from an action
+    # name (FINDINGS.md, defect 3).
+    #
+    # `app.shortcuts` is an addition: upstream's main.py binds no accelerator
+    # for it, so <Primary>question is a key combination this port answers and
+    # upstream does not. Recorded in COMPONENT_PARITY.md.
     APP_ACCELS = {
       "app.quit"            => ["<Primary>q"],
       "app.shortcuts"       => ["<Primary>question"],
@@ -80,8 +99,7 @@ module Wordbook
 
     def run(argv = ARGV) = build.run([$PROGRAM_NAME] + argv)
 
-    # Gtk's application, because Adwaita's is broken in these bindings. The
-    # command line is handled here rather than by GApplication's default
+    # The command line is handled here rather than by GApplication's default
     # because the options can act on an already-running instance.
     def app = @app ||= Gtk::Application.new(@app_id, :handles_command_line)
 
@@ -98,8 +116,10 @@ module Wordbook
     private
 
       def on_startup
-        GLib.application_name = APP_NAME
+        app.resource_base_path = Constants::RES_PATH
+        GLib.application_name = _(APP_NAME)
         GLib.prgname = @app_id
+        Translations.bind_glib_domain
         Style.install
         Adwaita::StyleManager.default.color_scheme = color_scheme
         setup_actions
@@ -127,6 +147,21 @@ module Wordbook
       def on_command_line(command_line)
         @options = parse(command_line.arguments.drop(1))
         Utils.log_init(@development_mode || @options[:verbose] == true)
+        if @options[:error]
+          report_option_error(command_line)
+        else
+          act_on_options
+        end
+      end
+
+      # GOption exits non-zero on a malformed option rather than carrying on
+      # with a half-parsed one, so this does too.
+      def report_option_error(command_line)
+        command_line.printerr("#{@options[:error]}\n")
+        1
+      end
+
+      def act_on_options
         if @options[:info]
           print_version_info
         else
@@ -157,33 +192,63 @@ module Wordbook
       end
 
       # Upstream's four options, short forms included. --look-up takes the next
-      # argument, or anything after an "=" in the same one.
+      # argument, or anything after an "=" in the same one; that argument is
+      # consumed, so a term spelled like a flag is still a term, and a
+      # --look-up with nothing after it is an error rather than a search for
+      # the empty string.
       def parse(arguments)
-        arguments.each_with_object({}) do |argument, options|
-          OPTIONS.fetch(argument.split("=").first, nil).then do |name|
-            record(
-              options,
-              name,
-              argument,
-              arguments,
-            )
+        {}.tap do |options|
+          index = 0
+          while index < arguments.length
+            index = consume(arguments, index, options)
           end
         end
       end
 
-      def record(options, name, argument, arguments)
-        case name
-        when :look_up then options[:look_up] = value_for(argument, arguments)
-        when nil then nil
-        else options[name] = true
+      # Returns the index to continue from, which is how the value of
+      # --look-up is skipped rather than parsed as a flag of its own.
+      def consume(arguments, index, options)
+        arguments[index].then do |argument|
+          case OPTIONS.fetch(argument.split("=").first, nil)
+          when :look_up then take_term(
+            arguments,
+            index,
+            options,
+            argument,
+          )
+          when nil then index + 1
+          else flag(OPTIONS.fetch(argument), options, index)
+          end
         end
       end
 
-      def value_for(argument, arguments)
+      def flag(name, options, index)
+        options[name] = true
+        index + 1
+      end
+
+      def take_term(arguments, index, options, argument)
         if argument.include?("=")
-          argument.split("=", 2).last
+          options[:look_up] = argument.split("=", 2).last
+          index + 1
         else
-          arguments[arguments.index(argument) + 1].to_s
+          take_next_term(
+            arguments,
+            index,
+            options,
+            argument,
+          )
+        end
+      end
+
+      def take_next_term(arguments, index, options, argument)
+        arguments[index + 1].then do |value|
+          if value.nil?
+            options[:error] = "Missing argument for #{argument}"
+          else
+            options[:look_up] = value
+          end
+          index + 2
         end
       end
 
@@ -214,7 +279,7 @@ module Wordbook
       end
 
       def show_shortcuts
-        ShortcutsDialog.new.tap do |dialog|
+        ShortcutsDialog.new(APP_ACCELS).tap do |dialog|
           dialog.build
           dialog.present(window.window)
         end

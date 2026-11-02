@@ -5,6 +5,8 @@ require "adwaita"
 require_relative "history_object"
 require_relative "history_row"
 require_relative "settings"
+require_relative "translations"
+require_relative "utils"
 
 module Wordbook
   # HistorySidebar is the sidebar pane: a header with a favourites filter and a
@@ -15,19 +17,24 @@ module Wordbook
   # together with the history handling in wordbook/window.py — the list store,
   # the 50-entry cap, the clear-with-undo toast and the favourites filter.
   #
-  # Two deliberate differences from upstream's widget tree:
+  # The blp's explicit Viewport is left out: GtkListBox is not GtkScrollable,
+  # so a GTK4 scrolled window inserts the viewport itself.
   #
-  #   * the filter button is driven by its own `toggled` signal rather than by
-  #     a stateful action, and the window's toggle-favorites action flips the
-  #     button, so there is one code path and no chance of the action and the
-  #     button toggling each other;
-  #   * the blp's explicit Viewport is left out, because a GTK4 scrolled window
-  #     wraps a non-scrollable child in one itself.
+  # The filter button has no `action-name`. Upstream's carries
+  # `action-name: "win.toggle-favorites"` (`window.blp:79`); here the button's
+  # own `toggled` signal applies the filter and the window's action flips the
+  # button, so the two cannot toggle each other. The accessible labels
+  # upstream attaches to both header buttons
+  # (`window.blp:81-82` and `:96-98`) were missing from this file entirely
+  # until a report found them, so a screen-reader user was told nothing about
+  # either button; they are set with update_property below.
   #
   # The toast belongs to the window's overlay, so clearing reports itself
   # through the on_toast callback rather than showing it here.
   #
   class HistorySidebar
+    include Translations
+
     HISTORY_LIMIT = 50
 
     def initialize(on_activate:, on_toast:, settings: Settings.get)
@@ -106,7 +113,7 @@ module Wordbook
         unless removals.empty?
           removals.reverse_each { |index, _item| store.remove(index) }
           update_clear_button_sensitivity
-          @on_toast.call("History cleared", -> { restore(removals) })
+          @on_toast.call(_("History cleared"), -> { restore(removals) })
         end
       end
     end
@@ -141,7 +148,7 @@ module Wordbook
 
     # Adwaita::WindowTitle takes its title and subtitle positionally, like
     # NavigationPage and Toast do.
-    def window_title = @window_title ||= Adwaita::WindowTitle.new("History", "")
+    def window_title = @window_title ||= Adwaita::WindowTitle.new(_("History"), "")
 
     def stack
       @stack ||= Adwaita::ViewStack.new.tap do |view_stack|
@@ -166,7 +173,8 @@ module Wordbook
     def favorites_filter_button
       @favorites_filter_button ||= Gtk::ToggleButton.new.tap do |button|
         button.icon_name = HistoryRow::UNSTARRED
-        button.tooltip_text = "Show Favorites Only"
+        button.tooltip_text = _("Show Favorites Only")
+        Utils.set_accessible_label(button, _("Show Favorites Only"))
         button.add_css_class("flat")
       end
     end
@@ -174,7 +182,8 @@ module Wordbook
     def clear_history_button
       @clear_history_button ||= Gtk::Button.new.tap do |button|
         button.icon_name = "user-trash-symbolic"
-        button.tooltip_text = "Clear History"
+        button.tooltip_text = _("Clear History")
+        Utils.set_accessible_label(button, _("Clear History"))
         button.sensitive = false
         button.add_css_class("flat")
       end
@@ -183,7 +192,7 @@ module Wordbook
     def empty_page
       @empty_page ||= Adwaita::StatusPage.new.tap do |page|
         page.icon_name = "document-open-recent-symbolic"
-        page.title = "No recent searches or favorites"
+        page.title = _("No recent searches or favorites")
         page.add_css_class("compact")
       end
     end

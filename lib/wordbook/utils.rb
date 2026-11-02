@@ -75,6 +75,21 @@ module Wordbook
       end
     end
 
+    # Upstream's `accessibility { label: … }` in the .blp files, which is what
+    # a screen reader announces for a button whose only visible content is an
+    # icon.
+    #
+    # GTK's own API is varargs in C; introspection exposes
+    # gtk_accessible_update_property as
+    # `(n_properties, properties[], values[])`, and ruby-gnome drops the length
+    # argument, so the properties and the values are passed as arrays. The
+    # signature was read out of the Gtk-4.0 typelib rather than run: GTK cannot
+    # be initialised in the environment this was written in (FINDINGS.md,
+    # defect 5), so no screen reader has announced any of these five labels.
+    def self.set_accessible_label(widget, label)
+      widget.update_property([Gtk::AccessibleProperty::LABEL], [label])
+    end
+
     # Upstream makes these in base.create_required_dirs; the paths live here, so
     # the mkdir does too, and base delegates.
     def self.create_required_dirs(*extra)

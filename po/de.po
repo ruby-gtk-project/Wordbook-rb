@@ -1,0 +1,288 @@
+# German translation for the Wordbook's package.
+# Copyright (C) 2024 THE Wordbook'S COPYRIGHT HOLDER
+# This file is distributed under the same license as the Wordbook's package.
+# gregorni <gregorniehl@web.de>, 2023.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: wordbook\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2026-04-11 09:59+0530\n"
+"PO-Revision-Date: 2023-02-18 22:39+0100\n"
+"Last-Translator: gregorni <gregorniehl@web.de>\n"
+"Language-Team: German <gnome-de@gnome.org>\n"
+"Language: de\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+#: data/resources/ui/settings-window.blp:10
+msgid "Appearance"
+msgstr "Erscheinungsbild"
+
+#: data/resources/ui/settings-window.blp:13
+msgid "Force Dark Mode"
+msgstr "Dunkelmodus benutzen"
+
+#: data/resources/ui/settings-window.blp:18
+msgid "Behavior"
+msgstr "Verhalten"
+
+#: data/resources/ui/settings-window.blp:21
+msgid "Live Search"
+msgstr "Live-Suche"
+
+#: data/resources/ui/settings-window.blp:22
+msgid "Show definition as the terms are typed in"
+msgstr "Zeigt Ergebnisse an, während der Suchbegriff eingegeben wird"
+
+#: data/resources/ui/settings-window.blp:26
+msgid "Double Click Search"
+msgstr "Doppelklick zum Suchen"
+
+#: data/resources/ui/settings-window.blp:27
+msgid "Search any word by double clicking on it"
+msgstr "Doppelklicken Sie Wörter, um sie zu suchen"
+
+# llm-generated
+#: data/resources/ui/settings-window.blp:31
+msgid "Auto Paste on Launch"
+msgstr "Beim Start automatisch einfügen"
+
+# llm-generated
+#: data/resources/ui/settings-window.blp:32
+msgid "Automatically paste and search clipboard content on launch"
+msgstr ""
+"Beim Start automatisch Inhalte aus der Zwischenablage einfügen und suchen"
+
+#: data/resources/ui/settings-window.blp:36
+msgid "Pronunciations Accent"
+msgstr "Akzent der Aussprache"
+
+#: data/resources/ui/shortcuts-dialog.blp:6
+msgctxt "shortcut window"
+msgid "General"
+msgstr "Allgemein"
+
+#: data/resources/ui/shortcuts-dialog.blp:9
+msgctxt "shortcut window"
+msgid "Show Shortcuts"
+msgstr "Tastenkürzel anzeigen"
+
+#: data/resources/ui/shortcuts-dialog.blp:14
+msgctxt "shortcut window"
+msgid "Preferences"
+msgstr "Einstellungen"
+
+#: data/resources/ui/shortcuts-dialog.blp:19
+msgctxt "shortcut window"
+msgid "Paste and Search"
+msgstr "Einfügen und Suchen"
+
+#: data/resources/ui/shortcuts-dialog.blp:24
+msgctxt "shortcut window"
+msgid "Random Word"
+msgstr "Zufälliges Wort"
+
+#: data/resources/ui/shortcuts-dialog.blp:29
+msgctxt "shortcut window"
+msgid "Search Selected Text"
+msgstr "Ausgewählten Text Suchen"
+
+# llm-generated
+#: data/resources/ui/shortcuts-dialog.blp:34
+msgctxt "shortcut window"
+msgid "Toggle Sidebar"
+msgstr "Seitenleiste ein-/ausblenden"
+
+# llm-generated
+#: data/resources/ui/shortcuts-dialog.blp:39
+msgctxt "shortcut window"
+msgid "Show Menu"
+msgstr "Menü anzeigen"
+
+# llm-generated
+#: data/resources/ui/shortcuts-dialog.blp:44
+msgctxt "shortcut window"
+msgid "Quit"
+msgstr "Beenden"
+
+#: data/resources/ui/window.blp:9
+msgid "Paste & Search"
+msgstr "Einfügen & Suchen"
+
+#: data/resources/ui/window.blp:14 wordbook/window.py:178
+msgid "Search Selected Text"
+msgstr "Ausgewählten Text Suchen"
+
+#: data/resources/ui/window.blp:19
+msgid "_Random Word"
+msgstr "_Zufälliges Wort"
+
+#: data/resources/ui/window.blp:28
+msgid "_Preferences"
+msgstr "_Einstellungen"
+
+#: data/resources/ui/window.blp:33
+msgid "_Keyboard Shortcuts"
+msgstr "_Tastenkürzel"
+
+#: data/resources/ui/window.blp:38
+msgid "_About Wordbook"
+msgstr "_Über Wordbook"
+
+#: data/resources/ui/window.blp:71
+msgid "History"
+msgstr "Verlauf"
+
+# llm-generated
+#: data/resources/ui/window.blp:77 data/resources/ui/window.blp:81
+msgid "Show Favorites Only"
+msgstr "Nur Favoriten anzeigen"
+
+# llm-generated
+#: data/resources/ui/window.blp:92 data/resources/ui/window.blp:96
+msgid "Clear History"
+msgstr "Verlauf löschen"
+
+# llm-generated
+#: data/resources/ui/window.blp:132
+msgid "No recent searches or favorites"
+msgstr "Keine letzten Suchen oder Favoriten"
+
+# llm-generated
+#: data/resources/ui/window.blp:161
+msgid "Clear"
+msgstr "Löschen"
+
+#: data/resources/ui/window.blp:167 data/resources/ui/window.blp:170
+msgid "Search"
+msgstr "Suchen"
+
+#: data/resources/ui/window.blp:182 data/resources/ui/window.blp:185
+msgid "Show History"
+msgstr "Verlauf anzeigen"
+
+# llm-generated
+#: data/resources/ui/window.blp:194 data/resources/ui/window.blp:197
+msgid "Main Menu"
+msgstr "Hauptmenü"
+
+#: data/resources/ui/window.blp:216 wordbook/main.py:37 wordbook/main.py:98
+#: wordbook/main.py:152
+msgid "Wordbook"
+msgstr "Wordbook"
+
+#: data/resources/ui/window.blp:217
+msgid "Look up definitions of any English term"
+msgstr "Schlagen Sie die Definitionen englischer Wörter nach"
+
+#: data/resources/ui/window.blp:245
+msgid "No definition found"
+msgstr "Keine Definition gefunden"
+
+# llm-generated
+#: data/resources/ui/window.blp:260
+msgid "Database not found"
+msgstr "Datenbank nicht gefunden"
+
+# llm-generated
+#: data/resources/ui/window.blp:261
+msgid "Installation is incomplete. Please reinstall Wordbook."
+msgstr ""
+"Die Installation ist unvollständig. Bitte installieren Sie Wordbook neu."
+
+#: data/resources/ui/window.blp:264
+msgid "Exit"
+msgstr "Beenden"
+
+#: wordbook/main.py:154
+msgid "Look up definitions for words"
+msgstr "Schlagen Sie die Definitionen englischer Wörter nach."
+
+#: wordbook/main.py:156
+msgid "translator-credits"
+msgstr "gregorni https://gitlab.com/gregorni"
+
+# llm-generated
+#: wordbook/main.py:159
+msgid "Source Code"
+msgstr "Quellcode"
+
+#: wordbook/main.py:161
+msgid "Copyright © 2016-2026 Mufeed Ali"
+msgstr "Copyright © 2016-2026 Mufeed Ali"
+
+# llm-generated
+#: wordbook/window.py:278
+msgid "Wordlist Loading"
+msgstr "Wortliste wird geladen"
+
+# llm-generated
+#: wordbook/window.py:279
+msgid "The word list is still loading. Please try again in a moment."
+msgstr ""
+"Die Wortliste wird noch geladen. Bitte versuchen Sie es in einem Moment "
+"erneut."
+
+# llm-generated
+#: wordbook/window.py:513
+msgid "History cleared"
+msgstr "Verlauf gelöscht"
+
+# llm-generated
+#: wordbook/window.py:514
+msgid "Undo"
+msgstr "Rückgängig"
+
+#: wordbook/window.py:674
+msgid "Listen to Pronunciation"
+msgstr "Aussprache anhören"
+
+# llm-generated
+#: wordbook/window.py:815
+msgid "Toggle Favorite"
+msgstr "Zu Favoriten hinzufügen/entfernen"
+
+# llm-generated
+#: wordbook/window.py:872
+msgid "Dismiss"
+msgstr "Schließen"
+
+#: wordbook/window.py:898
+msgid "Invalid input"
+msgstr "Ungültige Eingabe"
+
+#: wordbook/window.py:899
+msgid "Nothing definable was found in your search input"
+msgstr "Es wurde keine Definition für Ihren Suchbegriff gefunden"
+
+#~ msgid "Setting things up…"
+#~ msgstr "Die App wird vorbereitet…"
+
+#~ msgid "Downloading WordNet…"
+#~ msgstr "WordNet wird heruntergeladen…"
+
+#~ msgid "Download failed"
+#~ msgstr "Download fehlgeschlagen"
+
+#~ msgid "Retry"
+#~ msgstr "Erneut versuchen"
+
+#~ msgid "Building Database…"
+#~ msgstr "Datenbank wird erstellt…"
+
+#~ msgid "Ready."
+#~ msgstr "Bereit."
+
+#~ msgid "/Pronunciation/"
+#~ msgstr "/Aussprache/"
+
+#~ msgid "Re-downloading WordNet database"
+#~ msgstr "Lade die WordNet-Datenbank erneut herunter"
+
+#~ msgid "Just a database upgrade."
+#~ msgstr "Die Datenbank wird aktualisiert."
+
+#~ msgid "This shouldn't happen too often."
+#~ msgstr "Dies sollte nicht zu häufig passieren."

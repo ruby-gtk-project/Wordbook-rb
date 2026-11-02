@@ -1,0 +1,166 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<component type="desktop-application">
+    <id>dev.mufeed.Wordbook</id>
+    <metadata_license>CC0-1.0</metadata_license>
+    <project_license>GPL-3.0-or-later</project_license>
+
+    <name>Wordbook</name>
+    <summary>Look up definitions for words</summary>
+    <description>
+        <p>Wordbook is an offline English-English dictionary application powered by WordNet and
+            eSpeak.</p>
+        <p>Features:</p>
+        <ul>
+            <li>Fully offline</li>
+            <li>Pronunciations</li>
+            <li>Random Word</li>
+            <li>Favorites</li>
+            <li>History</li>
+            <li>Double click to search</li>
+            <li>Dark mode</li>
+        </ul>
+    </description>
+    <developer id="mufeed.dev">
+        <name translate="no">Mufeed Ali</name>
+    </developer>
+    <update_contact>me@mufeed.dev</update_contact>
+
+    <url type="homepage">https://apps.gnome.org/Wordbook</url>
+    <url type="bugtracker">https://github.com/mufeedali/Wordbook/issues</url>
+    <url type="vcs-browser">https://github.com/mufeedali/Wordbook</url>
+    <url type="translate">https://github.com/mufeedali/Wordbook/tree/main/po</url>
+    <url type="donation">https://github.com/sponsors/mufeedali</url>
+    <content_rating type="oars-1.1" />
+    <launchable type="desktop-id">dev.mufeed.Wordbook.desktop</launchable>
+    <translation type="gettext">wordbook</translation>
+
+    <screenshots>
+        <screenshot type="default">
+            <caption>Light Mode</caption>
+            <image>https://raw.githubusercontent.com/mufeedali/Wordbook/main/screenshots/light.png</image>
+        </screenshot>
+        <screenshot>
+            <caption>Dark Mode</caption>
+            <image>https://raw.githubusercontent.com/mufeedali/Wordbook/main/screenshots/dark.png</image>
+        </screenshot>
+    </screenshots>
+
+    <releases>
+        <release version="1.0.0" date="2026-04-11">
+            <description>
+                <ul>
+                    <li>Fully offline, now bundles WordNet</li>
+                    <li>Updated WordNet to OEWN 2025</li>
+                    <li>Improved completions</li>
+                    <li>Pronunciations from WordNet where possible</li>
+                    <li>Pronunciations-based grouping for homophones</li>
+                    <li>Several minor fixes and improvements</li>
+                    <li>Added translations: Persian, Croatian, Hungarian, Kazakh, Vietnamese, Simplified Chinese</li>
+                </ul>
+            </description>
+        </release>
+        <release version="0.6.0" date="2025-09-01">
+            <description>
+                <ul>
+                    <li>Added a clear button for search</li>
+                    <li>Added a small delay for live search</li>
+                    <li>Added duplicate checks for related words</li>
+                    <li>Added Occitan translation</li>
+                </ul>
+            </description>
+        </release>
+        <release version="0.5.1" date="2025-08-23">
+            <description>
+                <ul>
+                    <li>Updated some metadata and docs</li>
+                </ul>
+            </description>
+        </release>
+        <release version="0.5.0" date="2025-08-22">
+            <description>
+                <ul>
+                    <li>Significant UI changes</li>
+                    <li>Added Favorites</li>
+                    <li>Added "Did you mean" suggestions for typos</li>
+                    <li>Added a context menu action to search for selected text</li>
+                    <li>Added support for auto-pasting clipboard content on launch</li>
+                    <li>Improved persistent history management</li>
+                    <li>Added GNOME Search Provider integration</li>
+                    <li>The app now remembers window dimensions</li>
+                    <li>Several performance and responsiveness improvements</li>
+                    <li>Improved keyboard navigation and accessibility</li>
+                    <li>Several bug fixes</li>
+                    <li>Added Italian and Hindi translations</li>
+                    <li>Updated translations for German, French, Dutch, Russian, and Turkish</li>
+                    <li>Ported the UI to use Blueprint</li>
+                    <li>BREAKING: Settings schema has changed</li>
+                </ul>
+            </description>
+        </release>
+        <release version="0.4.0" date="2023-09-25">
+            <description translate="no">
+                <ul>
+                    <li>GTK4 + libadwaita Port</li>
+                    <li>Persistent history storage</li>
+                    <li>Default to live search</li>
+                    <li>Update WordNet library and database</li>
+                </ul>
+            </description>
+        </release>
+        <release version="0.3.1" date="2021-06-06">
+            <description translate="no">
+                <ul>
+                    <li>Made some minor tweaks to the UI</li>
+                    <li>Fixed search entry focus on launch</li>
+                </ul>
+            </description>
+        </release>
+        <release version="0.3.0" date="2021-04-30">
+            <description translate="no">
+                <ul>
+                    <li>Switched to a brand new icon</li>
+                    <li>Moved history from completions to a new sidebar</li>
+                    <li>Added "--look-up" CLI argument</li>
+                    <li>Made some UI improvements to adapt better to different display sizes</li>
+                    <li>Made some other minor improvements</li>
+                </ul>
+            </description>
+        </release>
+        <release version="0.2.0" date="2021-03-08">
+            <description translate="no">
+                <ul>
+                    <li>Updated WordNet dependency, will need a redownload of the database</li>
+                    <li>Fixed symbolic icon issues</li>
+                    <li>Improved responsiveness</li>
+                    <li>Removed a feature called "Hide window buttons when maximized"</li>
+                    <li>Fixed some issues with the Flatpak</li>
+                    <li>Fixed several minor bugs</li>
+                </ul>
+            </description>
+        </release>
+        <release version="0.1.0" date="2021-02-02">
+            <description translate="no">
+                <p>Initial release</p>
+            </description>
+        </release>
+    </releases>
+    <requires>
+      <display_length compare="ge">360</display_length>
+    </requires>
+    <supports>
+      <control>keyboard</control>
+      <control>pointing</control>
+      <control>touch</control>
+    </supports>
+    <kudos>
+        <kudo>ModernToolkit</kudo>
+        <kudo>HiDpiIcon</kudo>
+    </kudos>
+    <custom>
+        <value key="Purism::form_factor">mobile</value>
+    </custom>
+    <branding>
+      <color type="primary" scheme_preference="light">#99c1f1</color>
+      <color type="primary" scheme_preference="dark">#1a5fb4</color>
+    </branding>
+</component>

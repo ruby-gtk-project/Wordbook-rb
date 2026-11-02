@@ -104,11 +104,27 @@
           ruby = pkgs.ruby_3_4;
           inherit gemConfig;
           gemdir = ./nix;
+          groups = [ "default" ];
         };
 
-        # The launcher is whatever the gemspec installs into exe/. Reading the
-        # directory keeps this flake generic: no name to keep in step by hand.
-        launcher = builtins.head (builtins.attrNames (builtins.readDir ./exe));
+        # The same gemdir with the `test` group included: rspec belongs in the
+        # devShell and not in the packaged app's runtime closure, and
+        # bundlerEnv's `groups` is the only thing that keeps those apart.
+        devGems = pkgs.bundlerEnv {
+          name = "Wordbook-dev-gems";
+          ruby = pkgs.ruby_3_4;
+          inherit gemConfig;
+          gemdir = ./nix;
+          groups = [ "default" "test" ];
+        };
+
+        # Every script the gemspec installs into exe/ gets a wrapper. Reading
+        # the directory keeps this flake generic: no name to keep in step by
+        # hand. The first one is the app; the rest are services like the GNOME
+        # Shell search provider, which the shell starts through its D-Bus
+        # .service file and which therefore has to exist in $out/bin.
+        launchers = builtins.attrNames (builtins.readDir ./exe);
+        launcher = builtins.head launchers;
 
         # Optional directories: a port that has not grown translations or data
         # assets yet simply has none.
@@ -141,9 +157,49 @@
             for d in ${pkgs.lib.escapeShellArgs optionalDirs}; do
               cp -r "$d" $out/share/Wordbook/
             done
-            # exe/ sits next to lib/ so the launcher's `require "Wordbook"`
+            # exe/ sits next to lib/ so each launcher's `require "wordbook"`
             # resolves against the copied tree.
-            install -Dm755 exe/${launcher} $out/share/Wordbook/exe/${launcher}
+            for e in ${pkgs.lib.escapeShellArgs launchers}; do
+              install -Dm755 "exe/$e" "$out/share/Wordbook/exe/$e"
+            done
+
+            # The desktop entry, the metainfo, the icons and the search
+            # provider files, in the XDG locations that give the app a
+            # launcher, an icon, an entry in Software and a search provider the
+            # shell can find. msgfmt merges po/ into the first two, which is
+            # what meson's i18n.merge_file does for upstream.
+            if [ -d data ]; then
+              install -Dm644 data/icons/dev.mufeed.Wordbook.svg \
+                $out/share/icons/hicolor/scalable/apps/dev.mufeed.Wordbook.svg
+              install -Dm644 data/icons/dev.mufeed.Wordbook-symbolic.svg \
+                $out/share/icons/hicolor/symbolic/apps/dev.mufeed.Wordbook-symbolic.svg
+              install -Dm644 data/dev.mufeed.Wordbook.SearchProvider.ini \
+                $out/share/gnome-shell/search-providers/dev.mufeed.Wordbook.SearchProvider.ini
+
+              mkdir -p $out/share/applications $out/share/metainfo $out/share/dbus-1/services
+              ${pkgs.gettext}/bin/msgfmt --desktop \
+                --template=data/dev.mufeed.Wordbook.desktop.in -d po \
+                -o $out/share/applications/dev.mufeed.Wordbook.desktop
+              ${pkgs.gettext}/bin/msgfmt --xml \
+                --template=data/dev.mufeed.Wordbook.metainfo.xml.in -d po \
+                -o $out/share/metainfo/dev.mufeed.Wordbook.metainfo.xml
+
+              sed "s|@bindir@|$out/bin|" \
+                data/dev.mufeed.Wordbook.SearchProvider.service.in \
+                > $out/share/dbus-1/services/dev.mufeed.Wordbook.SearchProvider.service
+            fi
+
+            # The compiled catalogues: upstream's fifteen languages, where
+            # Wordbook::Translations looks for them.
+            if [ -d po ]; then
+              for lang in $(cat po/LINGUAS); do
+                install -Dm644 /dev/null \
+                  $out/share/Wordbook/locale/$lang/LC_MESSAGES/wordbook.mo
+                ${pkgs.gettext}/bin/msgfmt -o \
+                  $out/share/Wordbook/locale/$lang/LC_MESSAGES/wordbook.mo \
+                  po/$lang.po
+              done
+            fi
 
             # Compile any GSettings schema the port ships.
             if [ -d data/schemas ]; then
@@ -155,16 +211,18 @@
             # -rbundler/setup puts the bundled gems on the load path, and
             # GI_TYPELIB_PATH keeps GObject-Introspection from re-registering
             # types the cairo gem's C extension has already registered.
-            makeWrapper ${gems.wrappedRuby}/bin/ruby $out/bin/${launcher} \
-              --add-flags "-rbundler/setup" \
-              --add-flags "-I$out/share/Wordbook/lib" \
-              --add-flags "$out/share/Wordbook/exe/${launcher}" \
-              --set GI_TYPELIB_PATH "${typelibPath}" \
-              --prefix XDG_DATA_DIRS : "$out/share" \
-              --prefix XDG_DATA_DIRS : "$out/share/gsettings-schemas/Wordbook-0.1.0" \
-              --prefix XDG_DATA_DIRS : "${pkgs.gsettings-desktop-schemas}/share/gsettings-schemas/${pkgs.gsettings-desktop-schemas.name}" \
-              --prefix XDG_DATA_DIRS : "${pkgs.gtk4}/share/gsettings-schemas/${pkgs.gtk4.name}" \
-              --prefix XDG_DATA_DIRS : "${pkgs.adwaita-icon-theme}/share"
+            for e in ${pkgs.lib.escapeShellArgs launchers}; do
+              makeWrapper ${gems.wrappedRuby}/bin/ruby $out/bin/"$e" \
+                --add-flags "-rbundler/setup" \
+                --add-flags "-I$out/share/Wordbook/lib" \
+                --add-flags "$out/share/Wordbook/exe/$e" \
+                --set GI_TYPELIB_PATH "${typelibPath}" \
+                --prefix XDG_DATA_DIRS : "$out/share" \
+                --prefix XDG_DATA_DIRS : "$out/share/gsettings-schemas/Wordbook-0.1.0" \
+                --prefix XDG_DATA_DIRS : "${pkgs.gsettings-desktop-schemas}/share/gsettings-schemas/${pkgs.gsettings-desktop-schemas.name}" \
+                --prefix XDG_DATA_DIRS : "${pkgs.gtk4}/share/gsettings-schemas/${pkgs.gtk4.name}" \
+                --prefix XDG_DATA_DIRS : "${pkgs.adwaita-icon-theme}/share"
+            done
 
             runHook postInstall
           '';
@@ -182,8 +240,8 @@
           name = "Wordbook-devshell";
 
           packages = [
-            gems
-            gems.wrappedRuby
+            devGems
+            devGems.wrappedRuby
             pkgs.bundler
             pkgs.bundix
             pkgs.pkg-config

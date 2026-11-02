@@ -2,6 +2,8 @@
 
 require "adwaita"
 
+require_relative "translations"
+
 module Wordbook
   # ErrorDialog is the one-button alert the window shows for the two errors
   # that are not a page of their own: a search that cleaned away to nothing,
@@ -16,6 +18,8 @@ module Wordbook
   # thing without the await.
   #
   class ErrorDialog
+    include Translations
+
     DISMISS = "dismiss"
 
     def initialize(primary_text, secondary_text)
@@ -27,7 +31,7 @@ module Wordbook
 
     def dialog
       @dialog ||= Adwaita::AlertDialog.new(@primary_text, @secondary_text).tap do |alert|
-        alert.add_response(DISMISS, "Dismiss")
+        alert.add_response(DISMISS, _("Dismiss"))
         alert.default_response = DISMISS
         alert.close_response = DISMISS
       end

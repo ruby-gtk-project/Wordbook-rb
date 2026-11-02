@@ -11,10 +11,15 @@ module Wordbook
   # extracts it into the user's data directory and removes the copies left by
   # earlier versions. A direct port of upstream's wordbook/database.py.
   #
-  # Upstream decompresses with Python's zstd module. Ruby has no zstd in its
-  # standard library, so the extraction pipes the file through the `zstd`
-  # command line tool instead; a missing tool is reported the same way a failed
-  # decompression is, and lands the window on its "Database not found" page.
+  # On a machine without the `zstd` program this port tells the user
+  # "Database not found — Installation is incomplete. Please reinstall
+  # Wordbook." about an installation that is complete, and upstream works. I
+  # have not fixed that: the extraction below shells out to `zstd` and reports
+  # a missing binary the same way it reports a corrupt archive.
+  # Upstream: `wordbook/database.py:119` — `zstd.open`, from the Python
+  # standard library.
+  # Port: `decompress` below. FINDINGS.md, defect 4, records the missing Ruby
+  # dependency and what closing this needs.
   #
   module DatabaseManager
     ZSTD = "zstd"
