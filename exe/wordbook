@@ -3,4 +3,4 @@
 
 require "wordbook"
 
-Wordbook::Application.new.build.run
+exit(Wordbook::Application.new.run(ARGV))

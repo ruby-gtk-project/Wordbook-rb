@@ -66,3 +66,7 @@ group :development do
   gem "rubocop"
 end
 gem "adwaita"
+
+# The bundled WordNet database is the SQLite file the Python `wn` library
+# reads; lib/wordbook/base.rb queries it directly.
+gem "sqlite3"

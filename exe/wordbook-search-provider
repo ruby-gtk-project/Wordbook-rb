@@ -1,0 +1,11 @@
+#!/usr/bin/env ruby
+# frozen_string_literal: true
+
+# The GNOME Shell search provider service, the port's equivalent of upstream's
+# data/search_provider.in. The shell starts it on demand through the
+# dev.mufeed.Wordbook.SearchProvider bus name; it is not meant to be run by
+# hand, beyond checking that it registers.
+
+require "wordbook"
+
+Wordbook::ShellSearchProvider.run(binary: ENV.fetch("WORDBOOK_BIN", "wordbook"))
