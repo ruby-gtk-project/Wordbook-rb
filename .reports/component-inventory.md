@@ -39,6 +39,44 @@ the existing `lib/wordbook/application.rb`).
 | `data/dev.mufeed.Wordbook.gschema.xml.in` | **empty schema** — no GSettings keys at all |
 | `po/` | 15 languages, `po/POTFILES` covers the three `.blp` files plus `main.py`, `window.py`, `settings_window.py` |
 
+## Port status — every component against `lib/` on `ruby`
+
+Re-checked this round by reading each upstream file and each `lib/*.rb`.
+**Every component upstream has now has a port file.** Nothing below is
+missing; what remains are the per-widget gaps and divergences tracked in
+`COMPONENT_PARITY.md` (chiefly `Adw.Breakpoint`, which the port drives from
+`update_collapse` instead) and the defects in `FINDINGS.md` (chiefly: no unit
+has ever been seen on screen, and the port ships no WordNet archive).
+
+| Upstream file(s) | → port file | Kind | Exists |
+|---|---|---|:-:|
+| `window.blp` (template) + `window.py` | `lib/wordbook/window.rb` | window | ✅ |
+| `window.blp` (`menu app-menu`) | `lib/wordbook/main_menu.rb` | menu | ✅ |
+| `window.blp` (sidebar) + `window.py` | `lib/wordbook/history_sidebar.rb` | page/sidebar | ✅ |
+| `window.py` `_create_history_label` / `_update_row_visuals` | `lib/wordbook/history_row.rb` | row (repeater) | ✅ |
+| `window.py` `HistoryObject` | `lib/wordbook/history_object.rb` | model | ✅ |
+| `window.py` `_populate_definitions` / `_create_definition_widget` | `lib/wordbook/definition_view.rb` | page content (repeater) | ✅ |
+| `window.py` `_create_definition_row` / `_create_definition_separator` | `lib/wordbook/definition_row.rb` | row (repeater) | ✅ |
+| `window.py` `_create_header_row` / `_append_pronunciation_controls` | `lib/wordbook/pronunciation_row.rb` | row | ✅ |
+| `window.py` `_create_relation_widget` | `lib/wordbook/relation_box.rb` | row/chips | ✅ |
+| `window.py` `_new_error` | `lib/wordbook/error_dialog.rb` | dialog (error state) | ✅ |
+| `search_completion.py` | `lib/wordbook/search_completion.rb` | popover + controllers | ✅ |
+| `settings-window.blp` + `settings_window.py` | `lib/wordbook/settings_dialog.rb` | preferences dialog | ✅ |
+| `shortcuts-dialog.blp` | `lib/wordbook/shortcuts_dialog.rb` | shortcuts dialog | ✅ |
+| `main.py` `Application` | `lib/wordbook/application.rb` | application + actions/accels | ✅ |
+| `main.py` `on_about` | `lib/wordbook/about_dialog.rb` | dialog | ✅ |
+| `style.css` | `lib/wordbook/style.rb` | stylesheet | ✅ |
+| `settings.py` | `lib/wordbook/settings.rb` | backing (config) | ✅ |
+| `base.py` (WordNet half) | `lib/wordbook/base.rb` | backing (lookup) | ✅ |
+| `base.py` (espeak half) | `lib/wordbook/espeak.rb` | backing (speech) | ✅ |
+| `database.py` | `lib/wordbook/database_manager.rb` | backing (database) | ✅ |
+| `utils.py` | `lib/wordbook/utils.rb` | backing (paths/logging) | ✅ |
+| `constants.py` | `lib/wordbook/constants.rb` | backing (constants) | ✅ |
+| `search_provider.in` + `.SearchProvider.ini` | `lib/wordbook/shell_search_provider.rb` | D-Bus search provider | ✅ |
+| `po/` (15 catalogues) + gettext | `lib/wordbook/translations.rb`, `po/`, `locale/` | translations | ✅ |
+| `gschema.xml.in` | — | GSettings schema, **empty upstream**: no keys, nothing to port | n/a |
+
+
 ## Components
 
 ### `data/resources/ui/window.blp` + `wordbook/window.py` — the main window
@@ -219,7 +257,7 @@ registers that action**, so the port has to install it explicitly.
 
 ### `wordbook/main.py` — the application
 
-→ `lib/wordbook/application.rb` *(exists as a skeleton; everything below is missing)*
+→ `lib/wordbook/application.rb` *(built: the CLI parser, both `app.*` actions and all eight accelerators are in place; `Gtk::ApplicationWindow` stands where upstream has `Adw.ApplicationWindow`, and signals are trapped with Ruby's `Signal.trap` — see `COMPONENT_PARITY.md`)*
 
 - `Adw.Application`, `HANDLES_COMMAND_LINE`; app name set via `GLib.set_application_name`
 - CLI: `-l/--look-up TERM`, `-i/--info`, `-v/--verbose`, `-p/--auto-paste`
