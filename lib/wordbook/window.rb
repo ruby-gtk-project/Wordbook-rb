@@ -24,20 +24,14 @@ module Wordbook
   # Ported from upstream's data/resources/ui/window.blp and
   # wordbook/window.py.
   #
-  # I did not build the window's responsive collapse as a breakpoint. On a
-  # phone-sized screen the sidebar still folds away, but it folds because this
-  # class watches the window's size and sets `collapsed` itself, and the sizes
-  # it can watch are not the ones a breakpoint observes: a
-  # `notify::default-width` arrives when the window's own default size changes,
-  # not on every allocation. So there are window sizes at which upstream has
-  # collapsed and this port has not.
-  # Upstream: `data/resources/ui/window.blp:54` — `Adw.Breakpoint` on
-  # `max-width: 550sp`. Port: `update_collapse` below. The threshold is now
-  # scaled the way `sp` is (`collapse_width`), so at 1.25 text scaling both
-  # collapse at 688 physical pixels; the signals it is evaluated on are still
-  # the wrong signals. FINDINGS.md, defect 2, is why closing it properly is
-  # expensive: only an AdwApplicationWindow can hold a breakpoint and
-  # `Adwaita::ApplicationWindow` cannot be constructed from these bindings.
+  # The responsive collapse is the `Adw.Breakpoint` upstream declares on the
+  # template (`data/resources/ui/window.blp:54`): an
+  # `Adwaita::BreakpointCondition` parsed from `max-width: 550sp`, with one
+  # setter putting `collapsed` on the split view, installed on the window with
+  # `add_breakpoint`. libadwaita evaluates it against the window's allocation,
+  # so it fires on every resize and scales the threshold by the text scaling
+  # factor itself.
+  # Upstream: `window.blp:54-60`. Port: `collapse_breakpoint` below.
   #
   # A search is superseded by bumping a generation counter rather than by
   # setting a threading.Event: a result whose generation is stale is dropped
@@ -58,13 +52,11 @@ module Wordbook
     HISTORY_DELAY = 2000
     SPEAK_SPEED = 120
 
-    # The blp's breakpoint condition is `max-width: 550sp`. An `sp` is a
-    # density-independent pixel multiplied by the text scaling factor, so the
-    # threshold in physical pixels is 550 x scale — 688 at 1.25 scaling.
-    COLLAPSE_WIDTH_SP = 550
+    # The blp's breakpoint condition, verbatim. An `sp` is a
+    # density-independent pixel, which libadwaita multiplies by the text
+    # scaling factor when it evaluates the condition.
+    COLLAPSE_CONDITION = "max-width: 550sp"
 
-    # gtk-xft-dpi is in 1024ths of a point and 96 dpi is scale 1.0.
-    UNSCALED_XFT_DPI = 96 * 1024
     MIN_WIDTH = 360
     MIN_HEIGHT = 280
     SEARCH_LINK_PREFIX = "search;"
@@ -111,7 +103,7 @@ module Wordbook
 
     def build
       window.tap do |win|
-        win.child = toast_overlay
+        win.content = toast_overlay
 
         toast_overlay.tap do |overlay|
           overlay.child = split_view
@@ -183,12 +175,9 @@ module Wordbook
         win.focus_widget = search_entry
         win.default_widget = search_button
 
+        win.add_breakpoint(collapse_breakpoint)
+
         win.signal_connect("notify::is-active") { paste_when_active }
-        win.signal_connect("notify::default-width") { update_collapse }
-        win.signal_connect("notify::maximized") { update_collapse }
-        win.signal_connect("notify::fullscreened") { update_collapse }
-        win.signal_connect("map") { update_collapse }
-        Gtk::Settings.default&.signal_connect("notify::gtk-xft-dpi") { update_collapse }
         win.signal_connect("close-request") { save_state_and_close }
 
         completion.build
@@ -422,45 +411,6 @@ module Wordbook
       def reset_scroll
         main_scroll.vadjustment.value = 0
         false
-      end
-
-      def update_collapse
-        split_view.collapsed = current_width <= collapse_width
-        false
-      end
-
-      def collapse_width = (COLLAPSE_WIDTH_SP * text_scale_factor).round
-
-      # The scaling factor GNOME's "Large Text" and the text-scaling-factor
-      # setting express through gtk-xft-dpi.
-      def text_scale_factor
-        Gtk::Settings.default.then do |settings|
-          if settings
-            scale_from(settings)
-          else
-            1.0
-          end
-        end
-      end
-
-      def scale_from(settings)
-        settings.gtk_xft_dpi.to_f.then do |dpi|
-          if dpi.positive?
-            dpi / UNSCALED_XFT_DPI
-          else
-            1.0
-          end
-        end
-      end
-
-      def current_width
-        window.allocated_width.then do |allocated|
-          if allocated.positive?
-            allocated
-          else
-            window.default_width
-          end
-        end
       end
 
       def header_sensitive(status)
@@ -839,12 +789,12 @@ module Wordbook
 
     # --- Memoized widgets ---------------------------------------------------
 
-    # Gtk::ApplicationWindow stands where upstream has Adw.ApplicationWindow
-    # (FINDINGS.md, defect 2: Adwaita::ApplicationWindow cannot be constructed
-    # from these bindings). The Adw.Breakpoint that window should hold is still
-    # missing — see update_collapse.
+    # An Adwaita::ApplicationWindow, as upstream's template root is: the
+    # constructor takes the application positionally, the content goes in
+    # through `content=` rather than `child=`, and it is the window class that
+    # can hold the breakpoint below.
     def window
-      @window ||= Gtk::ApplicationWindow.new(@app).tap do |win|
+      @window ||= Adwaita::ApplicationWindow.new(@app).tap do |win|
         win.title = _("Wordbook")
         win.icon_name = "accesories-dictionary"
         win.set_default_size(@settings.window_width, @settings.window_height)
@@ -855,6 +805,15 @@ module Wordbook
         end
       end
     end
+
+    # One setter, the one the blp declares: `main_split_view.collapsed: true`.
+    def collapse_breakpoint
+      @collapse_breakpoint ||= Adwaita::Breakpoint.new(collapse_condition).tap do |breakpoint|
+        breakpoint.add_setter(split_view, "collapsed", true)
+      end
+    end
+
+    def collapse_condition = @collapse_condition ||= Adwaita::BreakpointCondition.parse(COLLAPSE_CONDITION)
 
     def toast_overlay = @toast_overlay ||= Adwaita::ToastOverlay.new
     def content_toolbar = @content_toolbar ||= Adwaita::ToolbarView.new
@@ -925,29 +884,27 @@ module Wordbook
     end
 
     def search_button
-      @search_button ||= Gtk::Button.new(icon_name: "edit-find-symbolic").tap do |button|
+      @search_button ||= Utils.accessible("GtkButton", _("Search")).tap do |button|
+        button.icon_name = "edit-find-symbolic"
         button.receives_default = true
         button.tooltip_text = _("Search")
-        Utils.set_accessible_label(button, _("Search"))
         button.add_css_class("suggested-action")
       end
     end
 
     def split_view_toggle_button
-      @split_view_toggle_button ||= Gtk::ToggleButton.new.tap do |button|
+      @split_view_toggle_button ||= Utils.accessible("GtkToggleButton", _("Show History")).tap do |button|
         button.icon_name = "sidebar-show-symbolic"
         button.tooltip_text = _("Show History")
-        Utils.set_accessible_label(button, _("Show History"))
       end
     end
 
     def menu_button
-      @menu_button ||= Gtk::MenuButton.new.tap do |button|
+      @menu_button ||= Utils.accessible("GtkMenuButton", _("Main Menu")).tap do |button|
         button.menu_model = MainMenu.new.build
         button.receives_default = true
         button.direction = :none
         button.tooltip_text = _("Main Menu")
-        Utils.set_accessible_label(button, _("Main Menu"))
       end
     end
 
@@ -1005,21 +962,10 @@ module Wordbook
       end
     end
 
-    # Adwaita::Spinner is a 1.6 widget, and Gtk::Spinner stands in where the
-    # bindings predate it. Neither branch has been looked at on screen — this
-    # port has never been rendered, because the environment it was written in
-    # has no display backend GTK can initialise (FINDINGS.md, defect 5), and I
-    # did not say so until a report made me.
-    # Upstream: `data/resources/ui/window.blp:277` (`Adw.Spinner`).
-    def spinner_page = @spinner_page ||= new_spinner
-
-    def new_spinner
-      if Adwaita.const_defined?(:Spinner)
-        Adwaita::Spinner.new
-      else
-        Gtk::Spinner.new.tap(&:start)
-      end
-    end
+    # Adwaita::Spinner, the widget upstream puts on the page
+    # (`data/resources/ui/window.blp:277`). It spins while it is visible
+    # without being started.
+    def spinner_page = @spinner_page ||= Adwaita::Spinner.new
 
     # The menu a selection inside a definition gets, so the selected words can
     # be searched without leaving the page.

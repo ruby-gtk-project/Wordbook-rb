@@ -28,13 +28,12 @@ module Wordbook
   # Upstream: `wordbook/main.py:43-74` — four `add_main_option` entries, parsed
   # by GOption. Port: `parse` below.
   #
-  # `Gtk::Application` stands where upstream has `Adw.Application`
-  # (FINDINGS.md, defect 1: `Adwaita::Application` cannot be constructed from
-  # these bindings). Adwaita's style manager still sets the colour scheme. The
-  # stylesheet is installed from Style rather than loaded out of a gresource
-  # bundle, which this port does not build — so the icons that upstream finds
-  # through the resource base path are found through the icon theme instead,
-  # from the SVGs in data/icons; see COMPONENT_PARITY.md.
+  # The application is an `Adwaita::Application`, as upstream's is
+  # (`main.py:20`): the constructor takes the application id and the flags
+  # positionally. The stylesheet is installed from Style rather than loaded out
+  # of a gresource bundle, which this port does not build — so the icons that
+  # upstream finds through the resource base path are found through the icon
+  # theme instead, from the SVGs in data/icons; see COMPONENT_PARITY.md.
   #
   # SIGINT and SIGTERM are trapped with Ruby's own Signal.trap rather than with
   # GLib.unix_signal_add.
@@ -45,9 +44,9 @@ module Wordbook
     APP_ID = "dev.mufeed.Wordbook"
     APP_NAME = N_("Wordbook")
 
-    # The single source of truth for the accelerators: installed here and read
-    # back by the shortcuts dialog, which cannot resolve them from an action
-    # name (FINDINGS.md, defect 3).
+    # The accelerators the application installs. The shortcuts dialog does not
+    # read this table: its rows name their action and Adwaita resolves the
+    # accelerator from here, as upstream's do.
     #
     # `app.shortcuts` is an addition: upstream's main.py binds no accelerator
     # for it, so <Primary>question is a key combination this port answers and
@@ -101,7 +100,7 @@ module Wordbook
 
     # The command line is handled here rather than by GApplication's default
     # because the options can act on an already-running instance.
-    def app = @app ||= Gtk::Application.new(@app_id, :handles_command_line)
+    def app = @app ||= Adwaita::Application.new(@app_id, :handles_command_line)
 
     def window
       @window ||= Window.new(
@@ -279,7 +278,7 @@ module Wordbook
       end
 
       def show_shortcuts
-        ShortcutsDialog.new(APP_ACCELS).tap do |dialog|
+        ShortcutsDialog.new.tap do |dialog|
           dialog.build
           dialog.present(window.window)
         end

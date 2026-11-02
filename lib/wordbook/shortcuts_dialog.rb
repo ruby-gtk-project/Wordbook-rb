@@ -10,14 +10,12 @@ module Wordbook
   # A port of upstream's data/resources/ui/shortcuts-dialog.blp, which is an
   # Adw.ShortcutsDialog with one "General" section.
   #
-  # Upstream's items carry an `action-name` and let Adwaita resolve whatever
-  # accelerator the application bound to it. I could not do that here:
-  # Adwaita::ShortcutsItem.new takes its title and accelerator positionally and
-  # the binding offers no way to set `action-name` (FINDINGS.md, defect 3). So
-  # each row names its action and the accelerator is read out of the same table
-  # the application installs its accelerators from — the table is passed in
-  # rather than re-typed here, so a rebound shortcut cannot start disagreeing
-  # with what this dialog shows.
+  # Each item carries the `action-name` upstream's does, and Adwaita resolves
+  # the accelerator the application bound to that action — so the dialog cannot
+  # show a key the app does not answer. `Adwaita::ShortcutsItem.new` takes its
+  # title and accelerator positionally and rejects every keyword form, and the
+  # accelerator cannot be left out, so it is built with an empty one and the
+  # action name is set after.
   #
   # The labels carry `msgctxt "shortcut window"`, which is what blueprint's
   # C_() produces: `Preferences` with that context and `_Preferences` without
@@ -29,11 +27,6 @@ module Wordbook
   #
   class ShortcutsDialog < Adwaita::ShortcutsDialog
     include Translations
-
-    def initialize(accels)
-      super()
-      @accels = accels
-    end
 
     def build
       tap do |dialog|
@@ -64,11 +57,10 @@ module Wordbook
         ]
       end
 
-      def item(label, action) = Adwaita::ShortcutsItem.new(label, accelerator_for(action))
-
-      # A row whose action has no accelerator would be built with an empty
-      # string, which Adwaita renders as a blank key. Every row has one today;
-      # if that stops being true, the accel table is what has to change.
-      def accelerator_for(action) = Array(@accels[action]).first.to_s
+      def item(label, action)
+        Adwaita::ShortcutsItem.new(label, "").tap do |shortcut|
+          shortcut.action_name = action
+        end
+      end
   end
 end

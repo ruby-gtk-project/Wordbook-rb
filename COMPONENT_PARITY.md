@@ -8,27 +8,39 @@ point-in-time audit it grew out of is `.reports/component-parity.md`.
 | Upstream | `origin/main` |
 | Port | `ruby` |
 | Units built | 10 / 10 |
-| Units **verified on screen** | **0 / 10** |
-| Axes verified at runtime | text ✓ (specs), widgets/CSS/signals ✗ |
+| Units **presented on screen** | **4 / 10** (window, sidebar, shortcuts dialog, relation chips) |
+| Axes verified at runtime | widgets ✓, signals ✓, breakpoint ✓ (driver); CSS, text ✗ here |
 
 ## Read this before the tables
 
-**Nothing in this port has been looked at on screen.** `require "gtk4"` raises
-`Gtk::InitError` in the environment it is written in — there is no display
-backend of any kind (`FINDINGS.md`, defect 5). So:
+**This port has now been looked at on screen.** The dev shell runs GTK under
+Xvfb — `nix develop --command xvfb-run -a ruby test/drive_window.rb` — and
+that driver presents the real application, walks 26 checks over the widgets
+GTK actually built, and writes PNGs to `tmp/screenshots`. All 26 pass. The
+first run of it aborted the application during startup, on the accessible
+labels, which had been written out of the typelib and never called
+(`FINDINGS.md` 10); the source had read as correct for a whole round.
 
-- no screenshot of any unit exists, and none has been compared with upstream's;
-- no connected signal has been observed firing. "✓ `clicked`" below means the
-  handler is connected in the source, not that pressing the button does
-  anything;
-- no CSS class has been seen to render. A class name below means it is added to
-  the widget;
-- the popover geometry, the sidebar collapse and the `Gtk::FlowBox` reflow are
-  upstream's arithmetic carried across, not measurements.
+What that run does and does not settle:
 
-The one axis that *is* verified is the text: `spec/wordbook/translations_spec.rb`
-compares every marker in `lib/` against `po/de.po` and all fifteen catalogues,
-and it passes. See `TRANSLATION_PARITY.md`.
+- the window class, the widget tree, the breakpoint and every one of the
+  eleven actions are **observed**, not reasoned: the split view is watched
+  collapsing at 420px and opening again at 900px, and each action is activated
+  and checked for an exception;
+- four images exist — `window.png`, `wide.png`, `narrow.png`,
+  `shortcuts.png` — and they have been looked at. They have **not** been put
+  beside upstream's and compared pixel for pixel;
+- the window lands on the database-error page, because the port ships no
+  WordNet archive (`FINDINGS.md` 7). So the definition view, the definition
+  rows, the pronunciation header and the history rows have still never been
+  on screen with data in them;
+- the CSS is still unmeasured. A class name below means it is added to the
+  widget;
+- the text axis is verified by `spec/wordbook/translations_spec.rb`, which
+  compares every marker in `lib/` against all fifteen catalogues — but the
+  spec suite does not run in this checkout at all: `spec/spec_helper.rb`
+  requires `kettle/test/rspec`, which is not in the bundle and cannot be
+  fetched offline. See `TEST_PARITY.md`.
 
 ## Unit 1 — the main window
 
@@ -37,10 +49,10 @@ and it passes. See `TRANSLATION_PARITY.md`.
 
 | Widget | Up × | Port × | Text | Verdict |
 |---|---:|---:|:-:|---|
-| `Adw.ApplicationWindow` | 1 | 0 | ✓ | correspondence: `Gtk::ApplicationWindow` (`FINDINGS.md` 2). `devel` class, `notify::is-active`, `icon-name`, min size, default size from settings all present |
-| `Adw.Breakpoint` | 1 | 0 | — | **gap**: driven from `update_collapse` instead. The `550sp` threshold is now scaled by the text scaling factor, so 1.25 scaling collapses both at 688px; the signals it is evaluated on are still not the allocation changes a breakpoint sees (`FINDINGS.md` 2) |
-| `focus-widget: search_entry` | 1 | 1 | — | **closed this round**: set when the window is built, so the entry is focused while the database extracts. It used to be set only at the end of `complete_initialization` |
-| `default-widget: search_button` | 1 | 1 | — | **closed this round**: set unconditionally, as the template declares it. It used to be set only when live search was off |
+| `Adw.ApplicationWindow` | 1 | 1 | ✓ | **closed this round**: `Adwaita::ApplicationWindow.new(app)` works, and the content goes in through `content=`. `devel` class, `notify::is-active`, `icon-name`, min size, default size from settings all present, and the class is asserted by the driver |
+| `Adw.Breakpoint` | 1 | 1 | — | **closed this round**: the condition is parsed from `max-width: 550sp` and the one setter puts `collapsed` on the split view, as the blp declares. The hand-rolled `update_collapse` and its four `notify::` handlers are gone. Observed collapsing at 420px and opening at 900px |
+| `focus-widget: search_entry` | 1 | 1 | — | set when the window is built, as the template declares it. GTK then moves the focus elsewhere while the header is insensitive — upstream included, since upstream disables the header the same way while the database extracts |
+| `default-widget: search_button` | 1 | 1 | — | set unconditionally, as the template declares it. GTK clears it again when the button is hidden, which live search does on both branches: `window.default_widget` is nil on a running port and on a running upstream |
 | `set_default_icon_name(app_id)` | 1 | 1 | — | **closed this round** (`window.py:128`) |
 | `Adw.ToastOverlay`, `Adw.OverlaySplitView`, `Adw.ToolbarView`, `Adw.HeaderBar`, `Adw.Clamp` ×2, `Gtk.Box` | 7 | 7 | — | parity, including the `show-sidebar` ↔ `active` bidirectional binding and the 300/500 clamp thresholds |
 | `Gtk.Entry` `search_entry` | 1 | 1 | ✓ | parity. The clear icon now routes through `trigger_search("")`, as upstream's does — divergence 1 |
@@ -51,7 +63,7 @@ and it passes. See `TRANSLATION_PARITY.md`.
 | `Adw.StatusPage` welcome | 1 | 1 | ✓ | parity. `icon-name: dev.mufeed.Wordbook-symbolic` now resolves: the icon ships in `data/icons/` and is installed to `share/icons/hicolor/symbolic/apps` |
 | `Gtk.Label` `search_fail_description_label` | 1 | 1 | ✓ | parity. "Did you mean: %s?" is now a format string with a real msgid — see `TRANSLATION_PARITY.md` |
 | `Adw.StatusPage` db-error + `Gtk.Button` `exit_button` | 2 | 2 | ✓ | parity. The button now exits without running the shutdown handler, so the history is not written — divergence 4 |
-| `Adw.Spinner` | 1 | 1 | — | correspondence: `Gtk::Spinner` where the bindings predate 1.6. Neither branch observed |
+| `Adw.Spinner` | 1 | 1 | — | **closed this round**: `Adwaita::Spinner`, the widget upstream puts there. The `Gtk::Spinner` fallback is gone |
 | `Gtk.EventControllerKey` | 1 | 1 | — | parity: `SHORTCUT_MASK` is the default modifier mask without Shift, Hyper included — divergence 7 |
 | `close-request` → `save_state` | 0 | 1 | — | extra, explained: the port saves on close as well as on the application's shutdown |
 
@@ -84,8 +96,10 @@ a located correspondence. **parity.**
 `window.py` `_populate_definitions` and friends → `definition_view.rb`,
 `definition_row.rb`, `pronunciation_row.rb`, `relation_box.rb`.
 **parity**, with `_("Listen to Pronunciation")` marked.
-`Adwaita::WrapBox` is substituted by `Gtk::FlowBox` where the bindings predate
-libadwaita 1.7; whether the reflow matches is unknown and unmeasured.
+`Adwaita::WrapBox` is the widget upstream builds and now the widget the port
+builds — the `Gtk::FlowBox` substitute is gone. Its reflow has not been
+compared with upstream's: the relation chips need a definition on screen, and
+the port has no WordNet archive to produce one (`FINDINGS.md` 7).
 
 ## Unit 6 — the search completion popover
 
@@ -113,10 +127,11 @@ dialog has no header where upstream has none. **parity.**
 
 1 section, 8 items, in upstream's order, all nine labels marked
 `p_("shortcut window", …)`. The invented `title = "Keyboard Shortcuts"` is
-**removed**. The accelerators are read from `Application::APP_ACCELS` rather
-than typed out again, so the dialog cannot disagree with what the app binds;
-upstream resolves them from an action name, which the binding cannot do
-(`FINDINGS.md` 3). **parity**, with one addition: `app.shortcuts` is bound to
+**removed**. The rows carry upstream's `action-name` and Adwaita resolves
+the accelerator from what the application bound — **closed this round**; the
+dialog used to be handed accelerator strings out of `Application::APP_ACCELS`
+(`FINDINGS.md` 3). `tmp/screenshots/shortcuts.png` shows the eight rows with
+their keys. **parity**, with one addition: `app.shortcuts` is bound to
 `<Primary>question`, which upstream binds to nothing.
 
 ## Unit 9 — the application
@@ -125,7 +140,7 @@ upstream resolves them from an action name, which the binding cannot do
 
 | | Verdict |
 |---|---|
-| base class | correspondence: `Gtk::Application` (`FINDINGS.md` 1) |
+| base class | **closed this round**: `Adwaita::Application`, built with the id and flags positionally |
 | `set_resource_base_path` | **closed this round** — called in `on_startup`. There is still no gresource bundle to find, so the icons come from the icon theme (`data/icons/`, installed to the XDG icon directories) and `app.shortcuts` is still installed by hand |
 | CLI options | **closed this round**: the parser consumes by position, so `--look-up -i` looks up "-i" and `--look-up` with nothing after it is reported instead of searching for the empty string. 14 examples pin it |
 | actions / accelerators | 3 actions, 9 accelerators against upstream's 2 and 8: `app.shortcuts` is the addition, recorded above |
@@ -176,4 +191,5 @@ Nine at the start of this round, one now.
 | 5 | `SHORTCUT_MASK` omitted `HYPER_MASK`, so Hyper+key typed a character | **closed** |
 | 6 | the gemspec declared no runtime dependencies | **closed**: `gtk4`, `adwaita`, `sqlite3`, `gettext` |
 | 7 | `DatabaseManager` shells out to the `zstd` program | **open** (`FINDINGS.md` 4) |
-| 8 | the `Adw.Breakpoint` trigger | **open** (`FINDINGS.md` 2) |
+| 8 | the `Adw.Breakpoint` trigger | **closed**: the breakpoint is installed on the window and observed firing |
+| 9 | the five accessible labels raised `NotImplementedError` and aborted the startup | **closed**: built through `Gtk::Builder`'s `<accessibility>` element, which is what blueprint compiles upstream's blocks into (`FINDINGS.md` 10) |

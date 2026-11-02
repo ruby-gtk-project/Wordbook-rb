@@ -120,6 +120,20 @@ gem install wordbook-rb
 
 ## 🔧 Basic Usage
 
+Everything runs through the flake's dev shell, which carries GTK 4, libadwaita,
+the introspection typelibs and an Xvfb wrapper:
+
+```sh
+nix develop --command xvfb-run -a ruby exe/wordbook      # the app
+nix develop --command xvfb-run -a ruby test/drive_window.rb  # drive it and screenshot it
+nix develop --command xvfb-run -a rspec -O /dev/null -Ilib spec  # the suite
+```
+
+`test/drive_window.rb` presents the real window, checks the widget tree, the
+breakpoint and every action, and leaves PNGs in `tmp/screenshots`. It exits
+non-zero when a check fails, so it is the thing to run before claiming a
+widget change works.
+
 ## 🤝 Contributing
 
 If you need some ideas of where to help, you could work on adding more code coverage,

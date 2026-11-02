@@ -171,19 +171,17 @@ module Wordbook
     end
 
     def favorites_filter_button
-      @favorites_filter_button ||= Gtk::ToggleButton.new.tap do |button|
+      @favorites_filter_button ||= Utils.accessible("GtkToggleButton", _("Show Favorites Only")).tap do |button|
         button.icon_name = HistoryRow::UNSTARRED
         button.tooltip_text = _("Show Favorites Only")
-        Utils.set_accessible_label(button, _("Show Favorites Only"))
         button.add_css_class("flat")
       end
     end
 
     def clear_history_button
-      @clear_history_button ||= Gtk::Button.new.tap do |button|
+      @clear_history_button ||= Utils.accessible("GtkButton", _("Clear History")).tap do |button|
         button.icon_name = "user-trash-symbolic"
         button.tooltip_text = _("Clear History")
-        Utils.set_accessible_label(button, _("Clear History"))
         button.sensitive = false
         button.add_css_class("flat")
       end

@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 require "glib2"
+require "gtk4"
 require "logger"
 require "fileutils"
 
@@ -79,15 +80,41 @@ module Wordbook
     # a screen reader announces for a button whose only visible content is an
     # icon.
     #
-    # GTK's own API is varargs in C; introspection exposes
-    # gtk_accessible_update_property as
-    # `(n_properties, properties[], values[])`, and ruby-gnome drops the length
-    # argument, so the properties and the values are passed as arrays. The
-    # signature was read out of the Gtk-4.0 typelib rather than run: GTK cannot
-    # be initialised in the environment this was written in (FINDINGS.md,
-    # defect 5), so no screen reader has announced any of these five labels.
-    def self.set_accessible_label(widget, label)
-      widget.update_property([Gtk::AccessibleProperty::LABEL], [label])
+    # It is built by asking Gtk::Builder for the widget, with the same
+    # <accessibility> element blueprint compiles those blocks into, because the
+    # introspected setter cannot be called from these bindings — see
+    # FINDINGS.md, defect 10. The caller gets a bare widget of the class it
+    # named and sets the rest of its properties in Ruby; only the accessible
+    # label comes out of the snippet.
+    #
+    # The builder itself is kept: it owns the objects it built, and a widget
+    # that has not been added to a parent yet would otherwise be finalised with
+    # it.
+    def self.accessible(class_name, label)
+      Gtk::Builder.new(string: accessible_xml(class_name, label)).then do |builder|
+        BUILDERS << builder
+        builder.get_object(ACCESSIBLE_ID)
+      end
+    end
+
+    ACCESSIBLE_ID = "accessible_widget"
+    BUILDERS = []
+
+    def self.accessible_xml(class_name, label)
+      <<~XML
+        <interface>
+          <object class="#{class_name}" id="#{ACCESSIBLE_ID}">
+            <accessibility>
+              <property name="label">#{escape_xml(label)}</property>
+            </accessibility>
+          </object>
+        </interface>
+      XML
+    end
+
+    # The labels are translated, so they can hold anything the catalogues hold.
+    def self.escape_xml(text)
+      text.gsub("&", "&amp;").gsub("<", "&lt;").gsub(">", "&gt;").gsub('"', "&quot;")
     end
 
     # Upstream makes these in base.create_required_dirs; the paths live here, so

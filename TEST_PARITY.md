@@ -7,8 +7,8 @@
 | Upstream test suite | **none** — verified: no `test/`, no `tests/`, no pytest or unittest configuration, no test target in `meson.build`, no test recipe in the `justfile` |
 | Parity | 0 / 0, met trivially |
 | The port's own suite | 7 files, 118 examples |
-| Examples that run here | **90, all passing** |
-| Examples that cannot load here | 28, in 2 files (`FINDINGS.md`, defect 5) |
+| Examples that run here | **118, all passing** |
+| Examples that cannot load here | none |
 
 Upstream has no tests, so parity is met by having none. That is the finding
 worth writing down: the port inherits no safety net, and for two rounds it had
@@ -29,8 +29,8 @@ place where "it compiles" says nothing at all.
 | `spec/wordbook/database_manager_spec.rb` | the paths, the candidate search order, `needs_extraction?`, pruning old versions, extraction through real `zstd`, the corrupt-archive and missing-program failures, `setup` | 16 | ✓ |
 | `spec/wordbook/espeak_spec.rb` | `ipa_to_espeak` (longest-key-first, the digraphs, the length marks, the dropped marks, non-ASCII), `phoneme_input`, the version failure messages | 11 | ✓ |
 | `spec/wordbook/translations_spec.rb` | every marker in `lib/` against all fifteen catalogues, `POTFILES`, the domain, the `msgctxt` distinction | 8 | ✓ |
-| `spec/wordbook/application_spec.rb` | the option parser (including the two bugs it used to have) and the accelerator table | 13 | ✗ |
-| `spec/wordbook/shell_search_provider_spec.rb` | all five `SearchProvider2` methods, the metas, the detached spawn, the missing-launcher path, the node XML against the `.ini` | 15 | ✗ |
+| `spec/wordbook/application_spec.rb` | the option parser (including the two bugs it used to have) and the accelerator table | 13 | ✓ |
+| `spec/wordbook/shell_search_provider_spec.rb` | all five `SearchProvider2` methods, the metas, the detached spawn, the missing-launcher path, the node XML against the `.ini` | 15 | ✓ |
 
 Several of these examples are the specification of a fix made this round, and
 they were written to fail against the code as it was:
@@ -47,12 +47,13 @@ they were written to fail against the code as it was:
 ## How to run them
 
 ```sh
-nix develop
-rspec -O /dev/null -Ilib spec/wordbook/base_spec.rb spec/wordbook/espeak_spec.rb \
-  spec/wordbook/settings_spec.rb spec/wordbook/database_manager_spec.rb \
-  spec/wordbook/translations_spec.rb
-# 90 examples, 0 failures
+nix develop --command xvfb-run -a rspec -O /dev/null -Ilib spec
+# 118 examples, 0 failures
 ```
+
+`xvfb-run` is what makes the whole suite loadable: the two files that require
+`gtk4` used to be skipped because `gtk_init` had nowhere to connect
+(`FINDINGS.md`, defect 5, now closed).
 
 `-O /dev/null` is needed in the dev shell because `.rspec` loads
 `spec/spec_helper.rb`, which requires `kettle-test` and the coverage stack —
@@ -62,12 +63,13 @@ command and `spec_helper` loads normally.
 
 ## What is not tested, and what that costs
 
-- **every widget.** No example constructs a window, a dialog, a row or a
-  popover, because `require "gtk4"` cannot be loaded in this environment at all
-  (`FINDINGS.md`, defect 5). The `ruby-gtk-testing` skill's driver — present
-  something, drive each of the 8 window actions and the 5 preference rows,
-  screenshot the 10 units — has **not been run**, and there are no screenshots
-  in this repository;
+- **every widget, by RSpec.** No example constructs a window, a dialog, a row
+  or a popover. What covers them instead is `test/drive_window.rb`, which
+  presents the real application under Xvfb and runs 26 checks over the window
+  class, the widget tree, the breakpoint and all eleven actions, writing PNGs
+  to `tmp/screenshots`. It is a driver, not a spec: it is not in the RSpec
+  run and nothing in CI calls it yet. The five preference rows and the
+  definition-side widgets are still undriven;
 - **the WordNet reader.** `Base::Wordnet`'s nine SQL statements are untested:
   the port ships no database to run them against (`FINDINGS.md`, defect 7).
   They are the single largest piece of hand-written stand-in code here, and

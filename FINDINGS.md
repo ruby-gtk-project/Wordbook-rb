@@ -10,58 +10,66 @@ here.
 |---|---|
 | Port | `ruby` |
 | Bindings | `gtk4` 4.3.9, `adwaita` 4.3.9 (ruby-gnome) |
-| Ruby | 3.4 |
+| Runtime | GTK 4.22.4, Ruby 3.4.9, Xvfb through the dev shell |
 
-## 1 — `Adwaita::Application` cannot be constructed
+Four of the ten below are **closed**, and three of those four were never
+really open: 1, 2 and 3 each recorded a widget as unconstructible when the
+constructor only wanted its arguments positionally, and 5 recorded GTK as
+uninitialisable when the dev shell's banner names the way in. They are kept,
+marked closed in their headings, because the shape of the mistake is worth
+having written down: an `ArgumentError` from these bindings advertises a
+keyword signature whatever the constructor actually wants, and a defect that
+excuses missing behaviour deserves to be re-run before it is believed.
 
-`Adwaita::Application.new(app_id, flags)` fails from these bindings, so the
-port's application is a `Gtk::Application`
-(`lib/wordbook/application.rb:86`). Every other Adwaita widget works inside
-it, and `Adwaita::StyleManager.default` still sets the colour scheme, so the
-only thing actually lost is the automatic resource loading
-`Adw.Application.do_startup` performs — see defect 3 for what that costs.
+## 1 — `Adwaita::Application` takes its arguments positionally — **closed**
 
-Upstream: `wordbook/main.py:20` — `class Application(Adw.Application)`.
+This was recorded as "cannot be constructed". It can:
+`Adwaita::Application.new("dev.mufeed.Wordbook", :handles_command_line)`
+works. What fails is every keyword form — `new`, `new(application_id: …)` —
+and the error message advertises the signature as keywords, which is what the
+earlier round read it as. The rule from the skill holds: when a constructor
+fails, try positional arguments in the order the message names them.
 
-## 2 — `Adwaita::ApplicationWindow` cannot be constructed
+The port's application is an `Adwaita::Application`
+(`lib/wordbook/application.rb`), as upstream's is (`wordbook/main.py:20`).
 
-The same shape of failure, and this one is expensive: `Adw.Breakpoint` can
-only be installed on an `AdwWindow` or `AdwApplicationWindow`
-(`adw_application_window_add_breakpoint`), so a `Gtk::ApplicationWindow`
-cannot hold the breakpoint upstream declares in `window.blp:54`.
+## 2 — `Adwaita::ApplicationWindow` and `Adwaita::Breakpoint` — **closed**
 
-What the user loses: upstream collapses the sidebar whenever the window is
-narrower than `550sp`, evaluated by libadwaita against the window's
-allocation. The port watches `notify::default-width`, `notify::maximized`,
-`notify::fullscreened` and `map` instead (`lib/wordbook/window.rb`,
-`update_collapse`), and those are not the same set of size changes: a resize
-that changes the allocation without changing the default size does not fire
-one. The threshold itself is now scaled the way `sp` is, so text scaling no
-longer shifts the two apart — only the trigger does.
+Also recorded as unconstructible, and also only unconstructible from keywords.
+`Adwaita::ApplicationWindow.new(app)` works; so does
+`Adwaita::Breakpoint.new(Adwaita::BreakpointCondition.parse("max-width: 550sp"))`
+with `add_setter(widget, "collapsed", true)` and
+`window.add_breakpoint(breakpoint)`.
 
-Closing it properly needs `Adwaita::ApplicationWindow` to work, or a
-`Gtk::Widget` subclass registered from Ruby whose `measure` and
-`size_allocate` can be overridden.
+So the window is an `Adwaita::ApplicationWindow` carrying the breakpoint
+upstream declares on its template (`window.blp:54`), and the hand-rolled
+`update_collapse` that watched `notify::default-width` is gone. The content
+goes in through `content=` rather than `child=`. `test/drive_window.rb`
+resizes the window and watches the split view collapse at 420px and open again
+at 900px, so this is measured rather than reasoned.
 
-## 3 — `Adwaita::ShortcutsItem` takes positional arguments and no action name
+Two readers to know: the reader for `collapsed` is `collapsed?`, not
+`collapsed`, and `Adwaita::WrapBox` has no `homogeneous=`.
 
-`Adwaita::ShortcutsItem.new` raises on no arguments with a message advertising
-the signature as `title: utf8, accelerator: utf8`, and then rejects keyword
-arguments; `new(title, accelerator)` works. There is no way through the
-binding to set `action-name`, which is what upstream's rows carry
-(`shortcuts-dialog.blp:298` and the seven after it) and what lets Adwaita look
-up the accelerator the application actually bound.
+## 3 — `Adwaita::ShortcutsItem` takes positional arguments — **closed**
 
-Consequence: the port has to supply accelerator strings itself. It reads them
-from `Application::APP_ACCELS`, the same table the accelerators are installed
-from (`lib/wordbook/shortcuts_dialog.rb`), so there is one source of truth
-rather than two lists to keep in step.
+`Adwaita::ShortcutsItem.new` rejects every keyword form and rejects a nil
+accelerator; `new(title, "")` works. The second half of the earlier finding —
+"there is no way through the binding to set `action-name`" — was wrong:
+`item.action_name = "win.preferences"` works, and Adwaita then resolves the
+accelerator from what the application bound.
 
-Related: upstream never registers `app.shortcuts` at all — libadwaita
+So the dialog's rows name their action, as upstream's do
+(`shortcuts-dialog.blp`), and the port no longer hands them accelerator
+strings out of `Application::APP_ACCELS`.
+`tmp/screenshots/shortcuts.png`, written by `test/drive_window.rb`, shows the
+eight rows with their keys filled in.
+
+Still true: upstream never registers `app.shortcuts`, because libadwaita
 auto-loads `shortcuts-dialog.ui` from the resource base path
 (`set_resource_base_path(RES_PATH)`, `main.py:80`). The port has no gresource
 bundle, so it installs the action and presents the dialog itself, and it binds
-`<Primary>question` to it, which upstream does not bind at all.
+`<Primary>question` to it, which upstream binds to nothing.
 
 ## 4 — Ruby has no zstd, and the port shells out to the program
 
@@ -78,34 +86,27 @@ Upstream works there.
 Closing it needs a zstd binding (`ruby-zstds`, `zstd-ruby`) added as a
 dependency, or the decompressor vendored. Neither was done this round.
 
-## 5 — GTK cannot be initialised in the environment this port is written in
+## 5 — GTK runs headlessly through the dev shell's Xvfb — **closed**
 
-`require "gtk4"` calls `gtk_init` at load time and raises
-`Gtk::InitError: failed to initialize GTK` here, for every value of
-`GDK_BACKEND` and with `DISPLAY` and `WAYLAND_DISPLAY` unset: there is no
-display backend of any kind, X11, Wayland or otherwise, and no `Xvfb` or
-headless compositor to install offline.
+An earlier round recorded that `require "gtk4"` raised `Gtk::InitError` here
+and concluded that nothing could be rendered. The dev shell's banner names the
+way in: every ruby invocation goes through
 
-Consequences, all of them real:
+    nix develop --command xvfb-run -a ruby <script>
 
-- **no screenshot of any unit exists.** Nothing in `COMPONENT_PARITY.md` has
-  been looked at on screen. Every verdict there is source against source;
-  anywhere a CSS class, a layout or a popover position is said to match, that
-  is upstream's arithmetic carried across, not a measurement;
-- **no signal has been driven.** `.claude/skills/ruby-gtk-testing` wants the
-  window presented and each action fired; `scripts/gtk_driver.rb` cannot
-  start, because the app object it drives cannot be loaded;
-- **the five accessible labels have never been announced.** Upstream's
-  `accessibility { label: … }` is built through
-  `Utils.set_accessible_label`, whose shape was read out of the `Gtk-4.0`
-  typelib (`gtk_accessible_update_property(n_properties, properties[],
-  values[])`) rather than run. The same is true of `compute_bounds`,
-  `set_pointing_to`, `Gtk::Window.set_default_icon_name`, the window's
-  `focus-widget` property and `Gtk::Settings#gtk_xft_dpi`: all present in the
-  typelib, none of them executed;
-- **two spec files cannot load.** `spec/wordbook/application_spec.rb` and
-  `spec/wordbook/shell_search_provider_spec.rb` require files that require
-  `gtk4`. The other 90 examples run and pass. See `TEST_PARITY.md`.
+and GTK initialises, the window maps, and `Gsk::Renderer#render_texture` plus
+`Gdk::Texture#save_to_png` write a PNG of it. `test/drive_window.rb` is the
+driver; `tmp/screenshots` is where its PNGs land.
+
+What that cost while it was believed: the first time this port was presented
+it aborted during startup, on the accessible labels, which had been written
+from the typelib and never run (defect 10). The source had read as correct for
+a whole round.
+
+Still true: the two specs that require `gtk4` are not the reason the suite does
+not run here. `spec/spec_helper.rb` requires `kettle/test/rspec`, which is not
+in this checkout's bundle and cannot be fetched offline, so no example runs at
+all. See `TEST_PARITY.md`.
 
 ## 6 — `sqlite3` is missing from the packaged app's bundle
 
@@ -152,3 +153,24 @@ D-Bus reply has to be wrapped in. The provider builds both by generating
 GVariant text and parsing it with `GLib::Variant.parse`
 (`lib/wordbook/shell_search_provider.rb:220-236`). Strings are escaped C-style
 on the way in.
+
+## 10 — `Gtk::Accessible#update_property` is unimplemented in the bindings
+
+Upstream's `accessibility { label: … }` blocks are
+`gtk_accessible_update_property_value(self, n, properties[], values[])`.
+Introspection exposes it as `update_property(properties, values)`, and calling
+it raises
+
+    NotImplementedError: TODO: in Ruby -> GIArgument(array/C)[interface(enum)]
+
+because ruby-gnome cannot marshal a C array of enum values. There is no
+single-property variant, `update_relation` has the same shape, and the native
+pointer a Fiddle call would need is not exposed on `GLib::Object`.
+
+The way through is the one blueprint itself compiles those blocks into:
+`Gtk::Builder` parses `<accessibility><property name="label">…</property>`.
+`Utils.accessible(class_name, label)` builds a bare widget of the named class
+from a one-object snippet and hands it back for the caller to configure in
+Ruby, so the five icon-only buttons keep the labels upstream gives them. The
+builder is kept alive alongside, because it owns what it built until the widget
+is parented.
