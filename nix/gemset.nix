@@ -380,4 +380,14 @@
     };
     version = "1.3.1";
   };
+  zstd-ruby = {
+    groups = ["default"];
+    platforms = [];
+    source = {
+      remotes = ["https://rubygems.org"];
+      sha256 = "17cg0ajd0gvpcs0rviqzhklbvlilcbhxzmx5qcjswy5drw643ydm";
+      type = "gem";
+    };
+    version = "2.0.10";
+  };
 }

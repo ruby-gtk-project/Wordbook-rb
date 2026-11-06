@@ -108,6 +108,7 @@ Gem::Specification.new do |spec|
   spec.add_dependency("gettext", "~> 3.5")                                          # upstream's message catalogue
   spec.add_dependency("gtk4", "~> 4.3")                                             # the toolkit
   spec.add_dependency("sqlite3", "~> 2.0")                                          # the bundled WordNet database
+  spec.add_dependency("zstd-ruby", "~> 2.0")                                        # unpacks the compressed WordNet archive
 
   # NOTE: It is preferable to list development dependencies in the gemspec due to increased
   #       visibility and discoverability.

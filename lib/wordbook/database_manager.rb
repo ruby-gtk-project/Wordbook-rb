@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
 require "fileutils"
-require "open3"
+require "zstd-ruby"
 
 require_relative "constants"
 require_relative "utils"
@@ -11,18 +11,16 @@ module Wordbook
   # extracts it into the user's data directory and removes the copies left by
   # earlier versions. A direct port of upstream's wordbook/database.py.
   #
-  # On a machine without the `zstd` program this port tells the user
-  # "Database not found — Installation is incomplete. Please reinstall
-  # Wordbook." about an installation that is complete, and upstream works. I
-  # have not fixed that: the extraction below shells out to `zstd` and reports
-  # a missing binary the same way it reports a corrupt archive.
   # Upstream: `wordbook/database.py:119` — `zstd.open`, from the Python
   # standard library.
-  # Port: `decompress` below. FINDINGS.md, defect 4, records the missing Ruby
-  # dependency and what closing this needs.
+  # Port: `decompress` below, streamed through `Zstd::StreamingDecompress`
+  # (the `zstd-ruby` gem, which vendors libzstd's C sources — no system
+  # `zstd` program or library needed). This closes FINDINGS.md defect 4: an
+  # earlier round shelled out to the `zstd` program and told a user without
+  # it installed "Database not found" about a complete installation.
   #
   module DatabaseManager
-    ZSTD = "zstd"
+    CHUNK_SIZE = 1024 * 1024
 
     def self.filename = "wn-#{Constants::WN_FILE_VERSION}.db.zst"
     def self.version_dir = File.join(Utils::DATA_DIR, "wn-#{Constants::WN_FILE_VERSION}")
@@ -105,20 +103,14 @@ module Wordbook
     end
 
     def self.decompress(compressed_path, tmp_path)
-      Open3.capture3(
-        ZSTD,
-        "-d",
-        "-f",
-        "-o",
-        tmp_path,
-        compressed_path,
-      ).then do |_out, stderr, status|
-        unless status.success?
-          raise "#{ZSTD} exited with #{status.exitstatus}: #{stderr.strip}"
+      decompressor = Zstd::StreamingDecompress.new
+      File.open(tmp_path, "wb") do |out|
+        File.open(compressed_path, "rb") do |input|
+          out.write(decompressor.decompress(input.read(CHUNK_SIZE))) until input.eof?
         end
       end
-    rescue Errno::ENOENT
-      raise "'#{ZSTD}' command not found; it is needed to unpack #{File.basename(compressed_path)}"
+    rescue RuntimeError => e
+      raise "zstd-ruby failed to unpack #{File.basename(compressed_path)}: #{e.message}"
     end
 
     # The entry point the window's setup thread calls: true means there is a

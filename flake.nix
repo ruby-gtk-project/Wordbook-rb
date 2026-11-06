@@ -396,9 +396,6 @@
             # Without it the pronunciation fallback and the "read it aloud"
             # button are code no run has ever entered.
             pkgs.espeak-ng
-            # zstd, the program lib/wordbook/database_manager.rb unpacks the
-            # bundled WordNet archive with (FINDINGS.md, defect 4).
-            pkgs.zstd
             # This machine may have no display server at all, so the shell
             # carries one it can start itself: `xvfb-run ruby exe/<app>` both
             # launches the app and is how test/drive_*.rb is run.

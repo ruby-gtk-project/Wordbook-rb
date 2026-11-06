@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 require "tmpdir"
+require "zstd-ruby"
 
 require "wordbook/base"
 require "wordbook/database_builder"
@@ -71,16 +72,7 @@ RSpec.describe Wordbook::DatabaseBuilder do
   before do
     File.write(source, lexicon_xml)
     described_class.new(source: source, output: archive, compression_level: 1).tap(&:build)
-    system(
-      "zstd",
-      "-q",
-      "-d",
-      "-f",
-      "-o",
-      database,
-      archive,
-      out: File::NULL,
-    )
+    File.binwrite(database, Zstd.decompress(File.binread(archive)))
   end
 
   def source = File.join(@dir, "lexicon.xml")

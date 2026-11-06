@@ -19,6 +19,12 @@ gem "gtk4"
 # builds the C extension against nixpkgs' sqlite instead.
 gem "sqlite3", force_ruby_platform: true
 
+# The WordNet archive lib/wordbook/database_manager.rb unpacks. There is no
+# zstd in Ruby's standard library; this binds libzstd directly (it vendors
+# the C sources, so it needs no system libzstd) in place of shelling out to
+# the `zstd` program. (`FINDINGS.md` 4.)
+gem "zstd-ruby"
+
 # The port's own spec suite, used by the devShell only. `groups` in flake.nix
 # keeps it out of the packaged app's gem closure — but bundlerEnv still writes
 # the whole lockfile beside the installed gems, so the packaged launcher's

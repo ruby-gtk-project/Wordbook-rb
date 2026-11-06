@@ -1,8 +1,8 @@
 # frozen_string_literal: true
 
 require "fileutils"
-require "open3"
 require "tmpdir"
+require "zstd-ruby"
 
 require_relative "constants"
 require_relative "lmf_reader"
@@ -35,7 +35,6 @@ module Wordbook
   class DatabaseBuilder
     class Error < StandardError; end
 
-    ZSTD = "zstd"
     DEFAULT_COMPRESSION_LEVEL = 15
     COMPRESSION_LEVELS = (1..22)
 
@@ -412,10 +411,9 @@ module Wordbook
         end
       end
 
-      # zstd rather than a Ruby binding for the same reason
-      # DatabaseManager#decompress unpacks with it: there is no zstd in Ruby's
-      # standard library and none in this app's bundle, and the program is
-      # already a dependency of the port on both sides.
+      # `zstd-ruby` (the gem DatabaseManager#decompress unpacks with) in place
+      # of shelling out to the `zstd` program: it vendors libzstd's C sources,
+      # so building the database needs no system zstd either.
       def compress(db_path)
         FileUtils.mkdir_p(File.dirname(File.expand_path(@output)))
         report("Compressing #{size_in_mb(db_path)} MB at level #{@compression_level}")
@@ -424,21 +422,9 @@ module Wordbook
       end
 
       def run_zstd(db_path)
-        Open3.capture3(
-          ZSTD,
-          "-#{@compression_level}",
-          "-f",
-          "-q",
-          "-o",
-          @output,
-          db_path,
-        ).then do |_out, stderr, status|
-          unless status.success?
-            raise Error, "#{ZSTD} exited with #{status.exitstatus}: #{stderr.strip}"
-          end
-        end
-      rescue Errno::ENOENT
-        raise Error, "'#{ZSTD}' command not found; it is needed to compress #{File.basename(@output)}"
+        File.binwrite(@output, Zstd.compress(File.binread(db_path), level: @compression_level))
+      rescue RuntimeError => e
+        raise Error, "zstd-ruby failed to compress #{File.basename(@output)}: #{e.message}"
       end
 
       def size_in_mb(path) = (File.size(path) / (1024.0 * 1024.0)).round(1)

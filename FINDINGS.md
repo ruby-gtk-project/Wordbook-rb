@@ -12,14 +12,15 @@ here.
 | Bindings | `gtk4` 4.3.9, `adwaita` 4.3.9 (ruby-gnome) |
 | Runtime | GTK 4.22.4, Ruby 3.4.9, Xvfb through the dev shell |
 
-Four of the thirteen below are **closed**, and three of those four were never
-really open: 1, 2 and 3 each recorded a widget as unconstructible when the
-constructor only wanted its arguments positionally, and 5 recorded GTK as
-uninitialisable when the dev shell's banner names the way in. They are kept,
-marked closed in their headings, because the shape of the mistake is worth
-having written down: an `ArgumentError` from these bindings advertises a
-keyword signature whatever the constructor actually wants, and a defect that
-excuses missing behaviour deserves to be re-run before it is believed.
+Of 1, 2, 3 and 5, three were never really open: 1, 2 and 3 each recorded a
+widget as unconstructible when the constructor only wanted its arguments
+positionally, and 5 recorded GTK as uninitialisable when the dev shell's
+banner names the way in. They are kept, marked closed in their headings,
+because the shape of the mistake is worth having written down: an
+`ArgumentError` from these bindings advertises a keyword signature whatever
+the constructor actually wants, and a defect that excuses missing behaviour
+deserves to be re-run before it is believed. 4 was a real gap — Ruby genuinely
+has no zstd — closed this round by adding a gem instead of a workaround.
 
 ## 1 — `Adwaita::Application` takes its arguments positionally — **closed**
 
@@ -71,20 +72,33 @@ auto-loads `shortcuts-dialog.ui` from the resource base path
 bundle, so it installs the action and presents the dialog itself, and it binds
 `<Primary>question` to it, which upstream binds to nothing.
 
-## 4 — Ruby has no zstd, and the port shells out to the program
+## 4 — Ruby has no zstd, and the port shelled out to the program — **closed**
 
 Upstream decompresses the bundled WordNet archive with Python's `zstd`
-module. There is no zstd in Ruby's standard library and no zstd gem in this
-checkout's bundle, so `lib/wordbook/database_manager.rb` pipes the archive
-through the `zstd` program.
+module. There is no zstd in Ruby's standard library, and for several rounds
+there was no zstd gem in this checkout's bundle either, so
+`lib/wordbook/database_manager.rb` piped the archive through the `zstd`
+program and reported a missing binary the same way it reported a corrupt
+archive — on a machine with the archive installed but without the `zstd`
+program, this port said "Database not found — Installation is incomplete.
+Please reinstall Wordbook." about a complete installation. Upstream worked
+there.
 
-What the user loses: on a machine with the archive installed but without the
-`zstd` program, this port says "Database not found — Installation is
-incomplete. Please reinstall Wordbook." about a complete installation.
-Upstream works there.
-
-Closing it needs a zstd binding (`ruby-zstds`, `zstd-ruby`) added as a
-dependency, or the decompressor vendored. Neither was done this round.
+Closed: `zstd-ruby` added to `wordbook-rb.gemspec` and `nix/Gemfile`,
+regenerated into `nix/gemset.nix` with `bundix` (`cd nix && bundle lock &&
+bundix`, as defect 6 was closed, on a machine with network access to
+rubygems.org). The gem vendors libzstd's own C sources, so it needs no
+system `zstd` program or `libzstd` library on either side: `lib/wordbook/
+database_manager.rb#decompress` reads the archive through
+`Zstd::StreamingDecompress` and `lib/wordbook/database_builder.rb#run_zstd`
+writes it with `Zstd.compress(…, level:)`. Verified with the real round trip
+— `DatabaseBuilder` building an archive and `DatabaseManager.decompress`
+unpacking it back into a database `Base::Wordnet` opens — and
+`spec/wordbook/database_manager_spec.rb` and
+`spec/wordbook/database_builder_spec.rb`, which now compress and decompress
+through the gem directly instead of shelling out to a system `zstd` to set
+up their fixtures. `test/drive_wordbook.rb`'s full run (210 checks) passes
+unchanged.
 
 ## 5 — GTK runs headlessly through the dev shell's Xvfb — **closed**
 

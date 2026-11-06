@@ -218,6 +218,6 @@ flatpak manifest, `scripts/flatpak-wheel-gen.py`, both screenshots,
 | 4 | the exit button ran `@app.quit`, which saved the history; upstream `sys.exit()`s | **closed**: `exit!(0)`, no shutdown handler, nothing written |
 | 5 | `SHORTCUT_MASK` omitted `HYPER_MASK`, so Hyper+key typed a character | **closed** |
 | 6 | the gemspec declared no runtime dependencies | **closed**: `gtk4`, `adwaita`, `sqlite3`, `gettext` |
-| 7 | `DatabaseManager` shells out to the `zstd` program | **open** (`FINDINGS.md` 4) |
+| 7 | `DatabaseManager` shells out to the `zstd` program | **closed**: `zstd-ruby` (`FINDINGS.md` 4) |
 | 8 | the `Adw.Breakpoint` trigger | **closed**: the breakpoint is installed on the window and observed firing |
 | 9 | the five accessible labels raised `NotImplementedError` and aborted the startup | **closed**: built through `Gtk::Builder`'s `<accessibility>` element, which is what blueprint compiles upstream's blocks into (`FINDINGS.md` 10) |

@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 require "tmpdir"
+require "zstd-ruby"
 
 require "wordbook/database_manager"
 
@@ -16,17 +17,10 @@ RSpec.describe Wordbook::DatabaseManager do
   # directory is pointed at the temporary one here.
   before { stub_const("Wordbook::Utils::DATA_DIR", @dir) }
 
-  # The real `zstd`, so the extraction path under test is the one that runs.
+  # The real zstd-ruby, so the extraction path under test is the one that
+  # runs.
   def compress(source, target)
-    system(
-      "zstd",
-      "-q",
-      "-f",
-      "-o",
-      target,
-      source,
-      out: File::NULL,
-    )
+    File.binwrite(target, Zstd.compress(File.binread(source)))
   end
 
   def version_dir = File.join(@dir, "wn-#{Wordbook::Constants::WN_FILE_VERSION}")
@@ -120,12 +114,6 @@ RSpec.describe Wordbook::DatabaseManager do
       File.write(compressed, "not compressed at all")
       expect(described_class.extract_database(compressed)).to be(false)
       expect(File.exist?("#{db_path}.tmp")).to be(false)
-      expect(File.exist?(db_path)).to be(false)
-    end
-
-    it "reports a failure when the zstd program is missing" do
-      stub_const("#{described_class}::ZSTD", "zstd-that-is-not-installed")
-      expect(described_class.extract_database(compressed)).to be(false)
       expect(File.exist?(db_path)).to be(false)
     end
   end
