@@ -8,7 +8,7 @@
 | Ported | **3** |
 | Gaps | **0** |
 | Port command | `nix develop --command rake data:validate`, and `nix flake check` over the built artifact |
-| The port's own suite | 7 files, **133 examples, 0 failures** |
+| The port's own suite | 9 files, **160 examples, 0 failures** |
 | The port's own driver | `test/drive_wordbook.rb`, **210 checks, all passing**, 19 screenshots |
 
 ## The census, and why a naive one returns zero
@@ -94,11 +94,13 @@ nix develop --command xvfb-run -a rspec -O /dev/null -Ilib spec
 | `spec/wordbook/base_spec.rb` | `clean_search_terms`, `default_process`, `ratio`, `qratio`, `suggestions`, `normalize_lemma`, `find_best_lemma_match`, `group_synsets_by_lemma`, `pick_pronunciation`, `related_lemmas` | 36 |
 | `spec/wordbook/espeak_spec.rb` | `ipa_to_espeak`, `phoneme_input`, the version messages, and the failure paths: no binary on PATH, a non-zero exit, a hang past the timeout, the LRU eviction at `CACHE_LIMIT` | 23 |
 | `spec/wordbook/settings_spec.rb` | load, the two pydantic validators, every writer, `batch_update`, `reset_to_defaults`, `PronunciationAccent` | 19 |
-| `spec/wordbook/database_manager_spec.rb` | the paths, the candidate search order, `needs_extraction?`, pruning old versions, extraction through real `zstd`, the corrupt-archive and missing-program failures, `setup` | 16 |
+| `spec/wordbook/database_builder_spec.rb` | `Wordbook::DatabaseBuilder` — the WordNet-LMF → sqlite loader scripts/generate-wn-db.py drives, synsets, lemmas, relations, the zstd compression step | 16 |
+| `spec/wordbook/database_manager_spec.rb` | the paths, the candidate search order, `needs_extraction?`, pruning old versions, extraction through real `zstd`, the corrupt-archive and missing-program failures, `setup` | 15 |
 | `spec/wordbook/shell_search_provider_spec.rb` | all five `SearchProvider2` methods, the metas, the detached spawn, the missing-launcher path, the node XML against the `.ini`, and the profile moving the bus name and object path | 16 |
 | `spec/wordbook/application_spec.rb` | the option parser (including the two bugs it used to have) and the accelerator table | 13 |
+| `spec/wordbook/lmf_reader_spec.rb` | `Wordbook::LmfReader` — streaming parse of the WordNet-LMF XML (synsets, senses, relations, pronunciations) that `DatabaseBuilder` consumes | 12 |
 | `spec/wordbook/translations_spec.rb` | every marker in `lib/` against all fifteen catalogues, `po/wordbook.pot`'s key set, `POTFILES`, the domain, the `msgctxt` distinction | 10 |
-| | | **133** |
+| | | **160** |
 
 `-O /dev/null` is needed in the dev shell because `.rspec` loads
 `spec/spec_helper.rb`, which requires `kettle-test` and the coverage stack —

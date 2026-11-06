@@ -36,12 +36,20 @@
 
     <screenshots>
         <screenshot type="default">
-            <caption>Light Mode</caption>
-            <image>https://raw.githubusercontent.com/mufeedali/Wordbook/main/screenshots/light.png</image>
+            <caption>Welcome</caption>
+            <image>https://raw.githubusercontent.com/ruby-gtk-project/Wordbook-rb/ruby/screenshots/02-welcome.png</image>
         </screenshot>
         <screenshot>
-            <caption>Dark Mode</caption>
-            <image>https://raw.githubusercontent.com/mufeedali/Wordbook/main/screenshots/dark.png</image>
+            <caption>Definitions</caption>
+            <image>https://raw.githubusercontent.com/ruby-gtk-project/Wordbook-rb/ruby/screenshots/03-definitions.png</image>
+        </screenshot>
+        <screenshot>
+            <caption>History</caption>
+            <image>https://raw.githubusercontent.com/ruby-gtk-project/Wordbook-rb/ruby/screenshots/04-history.png</image>
+        </screenshot>
+        <screenshot>
+            <caption>Preferences</caption>
+            <image>https://raw.githubusercontent.com/ruby-gtk-project/Wordbook-rb/ruby/screenshots/06-preferences.png</image>
         </screenshot>
     </screenshots>
 

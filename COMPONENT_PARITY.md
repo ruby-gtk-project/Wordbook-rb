@@ -41,10 +41,13 @@ What that run does and does not settle:
 - the CSS is still unmeasured. A class name below means it is added to the
   widget;
 - the text axis is verified by `spec/wordbook/translations_spec.rb`, which
-  compares every marker in `lib/` against all fifteen catalogues — but the
-  spec suite does not run in this checkout at all: `spec/spec_helper.rb`
-  requires `kettle/test/rspec`, which is not in the bundle and cannot be
-  fetched offline. See `TEST_PARITY.md`.
+  compares every marker in `lib/` against all fifteen catalogues. `bundle
+  exec rspec` itself still fails offline, because `.rspec` loads
+  `spec/spec_helper.rb`, which requires `kettle-test` and the project's CI
+  coverage stack, not in `nix/Gemfile`. The dev shell's own banner names the
+  command that avoids that path — `ruby -e 'require "rspec/core"; exit
+  RSpec::Core::Runner.run([...])'` under `xvfb-run` — and that command runs
+  the whole suite: 9 files, 160 examples, 0 failures. See `TEST_PARITY.md`.
 
 ## Unit 1 — the main window
 
