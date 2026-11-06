@@ -1,0 +1,67 @@
+name: CI
+
+on:
+  push:
+    branches: [ruby]
+  pull_request:
+    branches: [ruby]
+
+jobs:
+  validate-data:
+    name: Validate desktop/appstream/schema data
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: cachix/install-nix-action@v27
+        with:
+          extra_nix_config: |
+            experimental-features = nix-command flakes
+      - name: rake data:validate
+        run: nix develop --command rake data:validate
+
+  rspec:
+    name: Run the rspec suite
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: cachix/install-nix-action@v27
+        with:
+          extra_nix_config: |
+            experimental-features = nix-command flakes
+      - name: bundle exec rspec (under xvfb, dev shell's documented command)
+        run: >
+          nix develop --command xvfb-run -a ruby -e
+          'require "rspec/core"; exit RSpec::Core::Runner.run(["--require", "spec_helper", "--format", "progress", "spec"])'
+
+  drive:
+    name: Drive the app end to end
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: cachix/install-nix-action@v27
+        with:
+          extra_nix_config: |
+            experimental-features = nix-command flakes
+      - name: xvfb-run ruby test/drive_wordbook.rb
+        run: nix develop --command xvfb-run -a ruby test/drive_wordbook.rb
+      - name: Upload screenshots
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: drive-screenshots
+          path: tmp/shots/*.png
+          if-no-files-found: ignore
+
+  flatpak-builder:
+    name: Flatpak
+    runs-on: ubuntu-latest
+    container:
+      image: bilelmoussaoui/flatpak-github-actions:gnome-nightly
+      options: --privileged
+    steps:
+      - uses: actions/checkout@v4
+      - uses: flatpak/flatpak-github-actions/flatpak-builder@v6
+        with:
+          bundle: "wordbook-rb-devel.flatpak"
+          manifest-path: "build-aux/flatpak/dev.mufeed.Wordbook.Devel.json"
+          cache-key: flatpak-builder-${{ github.sha }}
