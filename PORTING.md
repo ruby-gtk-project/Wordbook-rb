@@ -24,7 +24,7 @@ alive after it has been closed.
 | The port's own suite | **160 examples, 0 failures**, executed |
 | The driver | **`test/drive_wordbook.rb`**, **215 checks, 0 failures**, 19 screenshots into `tmp/shots` |
 | Upstream tests ported | **3 / 3** (`rake data:validate` and `nix flake check`) |
-| Open gaps | **1 component, 0 test, 12 translation** |
+| Open gaps | **2 component, 0 test, 12 translation** |
 
 ## Upstream
 
@@ -105,7 +105,7 @@ behaviour is not.
 ## Open gaps
 
 Measured against this round's own re-check of every gap this file has ever
-listed, against the files and commands each one names: **1 component gap, 0
+listed, against the files and commands each one names: **2 component gaps, 0
 test gaps, 12 translation gaps**. An older round's intro paragraph used to live
 here reciting which of a previous list's 8 gaps had closed; the list itself
 had moved on to a different 8 since, with most of those closed too and still
@@ -114,12 +114,13 @@ list below is now the only place a gap's state is recorded, checked against
 source this round rather than carried forward from the last report that
 mentioned it.
 
-**Component gaps (1).** This section listed 8 for several rounds; this round
-re-checked each one against the files it names, not against the sentence
-describing it, and 7 were already closed — some since several rounds back —
-while the ledger kept reporting them open, which is exactly the staleness this
-file's own header warns about. Corrected below, with what closed each one and
-where that is recorded.
+**Component gaps (2).** This section listed 8 for several rounds; a prior
+round re-checked each one against the files it names, not against the
+sentence describing it, and found 7 already closed — some since several
+rounds back — while the ledger kept reporting them open, which is exactly the
+staleness this file's own header warns about. That left 1 gap open below.
+This round adds a second: the item previously marked "closed" for the
+search-provider's D-Bus surface is not reliably true (see item 2).
 
 1. **No dictionary ships pre-built**, so a fresh install with no WordNet
    archive placed next to it lands every search on "Database not found".
@@ -147,7 +148,25 @@ where that is recorded.
    runs `rake wn:db` themselves, the same as upstream's build asks a packager
    to run `meson configure -Dinstall_wn_db=true`.
 
-Closed, found already done this round, with where that is recorded:
+2. **The search provider's D-Bus surface is not reliably green.**
+   `test/drive_search_provider_dbus.rb` was previously listed below as
+   "closed" on the strength of one passing run. Re-run three consecutive
+   times this round, unmodified, same checkout: run 1 passed 7/7, run 2
+   passed 7/7, run 3 failed 1/7. Root cause, isolated live: owning the D-Bus
+   bus name and registering the `SearchProvider2` object at
+   `/dev/mufeed/Wordbook/SearchProvider` are two separate calls in
+   `lib/wordbook/shell_search_provider.rb`/`exe/wordbook-search-provider`
+   with nothing ordering the second against the first; when the driver's
+   `gdbus introspect` lands in that window, `Introspect` fails and every
+   later numbered check in that run cascades from it. The five
+   `SearchProvider2` methods themselves are implemented correctly — every
+   run that gets past the race passes all 7 checks, including the two write
+   paths (`ActivateResult`, `LaunchSearch`) — but "has never been run" being
+   marked closed on one green run overstated what the driver proves. See
+   `.reports/component-parity.md` (Unit 10), `.reports/test-parity.md` and
+   `.reports/accountability-ensurance.md` for the three-run transcript.
+
+Closed, found already done in a prior round, with where that is recorded:
 
 - **No flatpak** — closed: `build-aux/flatpak/dev.mufeed.Wordbook.Devel.json`
   and `.github/workflows/ci.yml`'s `flatpak-builder` job both exist and build
@@ -162,10 +181,6 @@ Closed, found already done this round, with where that is recorded:
   this round, which has no `Process.spawn` or backtick call in it.
 - **The archive path has never been run by the app** — closed this round,
   for real, not by assertion: see gap 1 above.
-- **The search provider's D-Bus surface has never been run** — closed:
-  `test/drive_search_provider_dbus.rb` calls all five `SearchProvider2`
-  methods over a private session bus with `gdbus call`, a real client over a
-  real socket. `COMPONENT_PARITY.md` Unit 10, `FINDINGS.md` 17.
 - **The settings dialog's rows and the completion popover's geometry are
   undriven** — closed: `test/drive_wordbook.rb`'s "the preferences dialog
   opens" through "flipping the switches writes the settings" steps drive all
