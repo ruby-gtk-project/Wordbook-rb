@@ -10,6 +10,7 @@
 | Port command | `nix develop --command rake data:validate`, and `nix flake check` over the built artifact |
 | The port's own suite | 9 files, **160 examples, 0 failures** |
 | The port's own driver | `test/drive_wordbook.rb`, **210 checks, all passing**, 19 screenshots |
+| The port's D-Bus driver | `test/drive_search_provider_dbus.rb`, **7 checks, all passing** — the search provider over a real session bus (`gdbus call`), not a bare Ruby method call |
 
 ## The census, and why a naive one returns zero
 

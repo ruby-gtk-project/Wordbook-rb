@@ -51,6 +51,8 @@ jobs:
           name: drive-screenshots
           path: tmp/shots/*.png
           if-no-files-found: ignore
+      - name: xvfb-run ruby test/drive_search_provider_dbus.rb
+        run: nix develop --command xvfb-run -a ruby test/drive_search_provider_dbus.rb
 
   flatpak-builder:
     name: Flatpak

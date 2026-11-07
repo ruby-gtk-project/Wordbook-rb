@@ -168,9 +168,23 @@ shell reads, the D-Bus `.service` that activates it (pointing at
 `.desktop` its `DesktopId` names. `flake.nix` installs all three and wraps
 both `exe/` scripts, so `nix build` produces a provider the shell can start.
 
-Not verified: no shell has been asked to search. The provider's behaviour is
-pinned by 15 examples in `spec/wordbook/shell_search_provider_spec.rb`, which
-cannot be loaded here (`FINDINGS.md` 5).
+**Verified over a real D-Bus connection this round**:
+`test/drive_search_provider_dbus.rb` starts the provider as its own process
+(exactly as `exe/wordbook-search-provider` does for the real shell) on a
+private session bus and calls all five `SearchProvider2` methods with
+`gdbus call` — a real client, a real socket, not `#initial_result_set`
+called as plain Ruby. This found a real bug the spec suite's direct calls
+could not: `handle_method_call` was calling `parameters.get_child_value(0)`,
+but these bindings hand the callback a plain Ruby Array, not a GVariant
+tuple, so every one of the five methods raised `NoMethodError` the first
+time anything actually called them over the bus. Closed this round —
+`FINDINGS.md` 17. 7 of 7 checks now pass: `Introspect`, `GetInitialResultSet`,
+`GetSubsearchResultSet`, `GetResultMetas`, `ActivateResult` and
+`LaunchSearch` all round-trip correctly. 16 examples in
+`spec/wordbook/shell_search_provider_spec.rb` still cover the method bodies
+directly (`FINDINGS.md` 5 — `kettle-test` still can't be loaded for `bundle
+exec rspec`, though the dev shell's own documented command runs the suite
+fine; see `TEST_PARITY.md`).
 
 ## Unit 11 — the invalid-input alert
 

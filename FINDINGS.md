@@ -318,3 +318,36 @@ overrides its private `create_path` to return a `Path` whose `po_file`,
 `po_time_stamp_file` and `edit_po_file` are flat. `rake gettext:mo:update` is
 safe again (verified with `msgunfmt`), and `rake locale` — plain GNU `msgfmt`
 over `po/<lang>.po` — is what `bin/setup` and the dev shell call.
+
+## 17 — `register_object`'s callback receives a plain Array, not a GLib::Variant tuple — **closed**
+
+`Gio::DBusConnection#register_object`'s method-call handler is documented
+(and written upstream, and written here until this round) to receive its
+sixth argument, `parameters`, as the GVariant tuple of the method's "in"
+args — `handle_method_call` called `parameters.get_child_value(0).to_a` on
+it, the way the C API and every other language binding's docs say to. In
+these Ruby bindings it instead arrives pre-unpacked into a plain Ruby Array,
+one already-converted element per "in" arg (`GetInitialResultSet(["word"])`'s
+`parameters` is `[["word"]]`, not a `(as)` variant). `get_child_value` raised
+`NoMethodError: undefined method 'get_child_value' for an instance of Array`
+for every one of the five `SearchProvider2` methods.
+
+Nothing caught this for two rounds because nothing had ever sent the
+provider a real D-Bus method-call signal: `spec/wordbook/shell_search_provider_spec.rb`
+calls `#initial_result_set` and friends directly, bypassing
+`handle_method_call` entirely, and `test/drive_wordbook.rb` never starts the
+provider as a service. `component-parity.md` named this gap by description
+("the hand-written GVariant text builders... have never been executed")
+without anyone having run the one command that would have shown it.
+
+Closed: `handle_method_call` now indexes `parameters` as the Array it is —
+`parameters[0]`, `parameters[1]`, `parameters[2]` — instead of calling
+`get_child_value` on it. Verified by
+`test/drive_search_provider_dbus.rb`, which starts the provider as its own
+process on a private D-Bus session bus (`dbus-run-session`) and calls all
+five `SearchProvider2` methods with `gdbus call`, a real client crossing a
+real socket: 7 of 7 checks pass. The reply side (`string_array`,
+`metas_variant`, built from `GLib::Variant.parse` text) was already correct —
+`gdbus call`'s replies parse back into the expected `(as)` / `(aa{sv})`
+shapes — so this binding quirk is one-directional: requests are unpacked,
+replies are not.

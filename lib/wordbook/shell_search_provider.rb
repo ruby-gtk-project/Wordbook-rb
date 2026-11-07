@@ -192,26 +192,27 @@ module Wordbook
         nil
       end
 
+      # `parameters` arrives as a plain Ruby Array, one already-converted
+      # element per "in" arg the method's NODE_XML declares — not the
+      # GLib::Variant tuple `get_child_value` expects. Found by driving this
+      # method over a real D-Bus connection
+      # (test/drive_search_provider_dbus.rb): every call raised
+      # `NoMethodError: undefined method 'get_child_value' for an instance of
+      # Array` before this, because nothing had ever sent these bindings a
+      # real method-call signal to learn that from.
       def handle_method_call(_connection, _sender, _path, _interface, method_name, parameters, invocation)
         case method_name
         when "GetInitialResultSet"
-          invocation.return_value(string_array(initial_result_set(parameters.get_child_value(0).to_a)))
+          invocation.return_value(string_array(initial_result_set(parameters[0])))
         when "GetSubsearchResultSet"
-          invocation.return_value(
-            string_array(
-              subsearch_result_set(
-                parameters.get_child_value(0).to_a,
-                parameters.get_child_value(1).to_a,
-              ),
-            ),
-          )
+          invocation.return_value(string_array(subsearch_result_set(parameters[0], parameters[1])))
         when "GetResultMetas"
-          invocation.return_value(metas_variant(result_metas(parameters.get_child_value(0).to_a)))
+          invocation.return_value(metas_variant(result_metas(parameters[0])))
         when "ActivateResult"
-          activate_result(parameters.get_child_value(0).get_string, [], 0)
+          activate_result(parameters[0], parameters[1], parameters[2])
           invocation.return_value(nil)
         when "LaunchSearch"
-          launch_search(parameters.get_child_value(0).to_a, 0)
+          launch_search(parameters[0], parameters[1])
           invocation.return_value(nil)
         else
           invocation.return_dbus_error("#{INTERFACE}.UnknownMethod", "Unknown method #{method_name}")
