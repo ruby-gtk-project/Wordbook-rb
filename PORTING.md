@@ -24,7 +24,7 @@ alive after it has been closed.
 | The port's own suite | **160 examples, 0 failures**, executed |
 | The driver | **`test/drive_wordbook.rb`**, **215 checks, 0 failures**, 19 screenshots into `tmp/shots` |
 | Upstream tests ported | **3 / 3** (`rake data:validate` and `nix flake check`) |
-| Open gaps | **1 component, 0 test, 1 translation** |
+| Open gaps | **1 component, 0 test, 12 translation** |
 
 ## Upstream
 
@@ -106,7 +106,7 @@ behaviour is not.
 
 Measured against this round's own re-check of every gap this file has ever
 listed, against the files and commands each one names: **1 component gap, 0
-test gaps, 1 translation gap**. An older round's intro paragraph used to live
+test gaps, 12 translation gaps**. An older round's intro paragraph used to live
 here reciting which of a previous list's 8 gaps had closed; the list itself
 had moved on to a different 8 since, with most of those closed too and still
 reported open, so the paragraph is gone rather than extended again — the gap
@@ -188,13 +188,50 @@ files `nix build` installs. `nix flake check` also runs
 `checks.packaged-database-read`, which exists because the packaged app shipped
 for a round with `sqlite3` missing from `nix/gemset.nix`.
 
-**Translation gaps (1).** `"Ruby Port"` (`about_dialog.rb:55`) is a key
-upstream does not have, in no catalogue, rendering in English beside fifteen
-translated siblings. Kept deliberately and listed under
-`TRANSLATION_PARITY.md`'s `## Extra`. The other three are closed:
-`po/wordbook.pot` is regenerated from `po/POTFILES` and holds all 64 keys,
-`rake gettext:mo:update` no longer empties the fifteen catalogues, and
-`locale/**/*.mo` is committed so a clone is translated.
+**Translation gaps (12).** This row said "1" for two rounds, naming only
+`"Ruby Port"`. That was stale: a live `comm` diff of `po/wordbook.pot`
+against `git show origin/main:po/wordbook.pot` this round (and the prior
+round's own `.reports/translation-parity.md` at commit `665cb58`, which had
+already found this and was never propagated here) shows the port's template
+holds **65** bare msgids against upstream's **53** — 12 port-only extras,
+not 1. All 53 upstream msgids are present; nothing is missing. The 12,
+English in all 15 catalogues because no translator has ever been offered
+them (`po/de.po` is still byte-identical to upstream's `de.po`):
+
+| msgid | Site | Why it exists |
+|---|---|---|
+| `Ruby Port` | `about_dialog.rb:55` (`PORT_LINK_LABEL`) | the port's own repository link; has no upstream string at all, kept deliberately |
+| `Features:` | `data/dev.mufeed.Wordbook.metainfo.xml.in`'s `<description>` feature list | the port's `po/POTFILES` extracts the metainfo file; upstream's `po/POTFILES` never lists it, so upstream never marks this translatable |
+| `Fully offline` | same `<description>` list | same cause |
+| `Pronunciations` | same `<description>` list | same cause |
+| `Favorites` | same `<description>` list | same cause |
+| `Double click to search` | same `<description>` list | same cause |
+| `Dark mode` | same `<description>` list | same cause |
+| `Dark Mode` | metainfo `<description>` list **and** the About dialog's toggle label | same cause; also appears under a different site than `Dark mode` |
+| `Light Mode` | metainfo `<description>` list / About dialog toggle label | same cause |
+| `Random Word` | metainfo `<description>` list (bare, no context) — distinct key from the existing `msgctxt "shortcut window"` `Random Word` upstream already has | the port's metainfo extraction adds a second, context-less key with the same text |
+| `dictionary;` | `data/dev.mufeed.Wordbook.desktop.in`'s `Keywords=` | the port's `po/POTFILES` extracts the desktop file; upstream's never does |
+| `History` (bare, no context) | desktop file's `Name`/metainfo extraction, distinct from the existing `History` key upstream already has elsewhere | same cause as `Random Word` above — a second, context-less key colliding in text with an existing one |
+
+**Decision, per string:** `Ruby Port` is kept — it is not an extraction
+artifact, it is a deliberate addition with no upstream string to diverge
+from. The other 11 are the metainfo/desktop extraction upstream's own
+`po/POTFILES` never performs (`git show origin/main:po/POTFILES` lists only
+`.blp` and `.py` files). This port's `po/POTFILES` adding
+`data/dev.mufeed.Wordbook.{desktop,metainfo.xml}.in` is what produces them.
+Not reverted this round — `TRANSLATION_PARITY.md`'s "Rows 53–63" section
+argues, with the extraction machinery already built and `msgfmt
+--desktop`/`--xml` merging already wired, that this is a bug fix upstream
+itself owes (`po/POTFILES` should list these files there too) rather than a
+port-side defect to suppress. That argument is reproduced and left standing;
+what was wrong was only the root ledger's count, corrected here to 12 so the
+next reader sees the true number instead of the stale "1". See
+`TRANSLATION_PARITY.md`'s `## Extra` for the full per-string table and
+`.reports/translation-parity.md` for the live `comm` re-run this round. The
+other three rows from previous reports are closed: `po/wordbook.pot` is
+regenerated from `po/POTFILES` and holds all 65 keys (53 upstream + 12
+extra), `rake gettext:mo:update` no longer empties the fifteen catalogues,
+and `locale/**/*.mo` is committed so a clone is translated.
 
 **Behaviour divergences recorded, not counted as gaps.** `syn` deduplicated
 here but not upstream (`base.rb:425` vs `base.py:266`); close-lemma match uses

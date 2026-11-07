@@ -7,8 +7,8 @@
 | Domain | `wordbook` (from upstream's `po/meson.build`) → port: **`wordbook`** |
 | Upstream messages | 63 distinct `(msgctxt, msgid)` keys over 77 call sites |
 | Ported | **63 / 63**, byte-identically |
-| Extra | **1** (`Ruby Port`), English-only, recorded below |
-| Extracted into `po/wordbook.pot` | **64** — the 63 plus the one extra |
+| Extra | **12**, English-only, recorded in full below — not 1; a stale "1" stood here for two rounds, see the correction note under `## Extra` |
+| Extracted into `po/wordbook.pot` | **65 bare msgids** — a live `comm` of `po/wordbook.pot` against `git show origin/main:po/wordbook.pot` this round shows upstream's own template has only **53** bare msgids (not the 63 of the ledger above, which also counts the 11 rows upstream's `.blp`/`.py` content implies but upstream's `POTFILES` never extracts); the port's 65 = 53 upstream + 12 extra |
 | Languages | 15 → **15**, all fifteen `.mo` files committed under `locale/` |
 | Translated strings | 780 → **780 of 780** translated, 0 untranslated, 0 fuzzy |
 | Unresolved markers | 0 |
@@ -143,11 +143,45 @@ pointing at its own `POTFILES`.
 
 ## Extra — keys the port adds
 
-One, kept deliberately and listed as English-only:
+**Correction:** this section said "One" (`Ruby Port`) for two rounds. A live
+`comm` of `po/wordbook.pot` against `git show origin/main:po/wordbook.pot`
+this round shows upstream's template has 53 bare msgids and the port's has
+65 — **twelve** extras, not one. The previous round's own
+`.reports/translation-parity.md` (commit `665cb58`) had already found and
+correctly recorded all twelve; this file and `PORTING.md`'s "Open gaps" table
+were never updated to match, so both kept repeating the superseded "1".
+Twelve, all English-only in every one of the 15 shipped languages because no
+translator has ever been offered them (`po/de.po` remains byte-identical to
+upstream's `de.po`):
 
 | msgid | Site | Why, and what is owed |
 |---|---|---|
-| `Ruby Port` | `about_dialog.rb:55` — the second About link, `PORT_LINK_LABEL` | the port's own repository, so the code being run can be found. It is in no catalogue, so it renders in English beside fifteen translated siblings. Kept, because a user who wants the source of the thing they are running should find it; recorded here rather than quietly marked, because an extra key is a divergence in the key set whatever its merits |
+| `Ruby Port` | `about_dialog.rb:55` — the second About link, `PORT_LINK_LABEL` | the port's own repository, so the code being run can be found. Has no upstream string to diverge from at all — a pure port addition, not an extraction artifact. **Decision: keep.** A user who wants the source of the thing they are running should find it; recorded here rather than quietly marked, because an extra key is a divergence in the key set whatever its merits |
+| `Features:` | `data/dev.mufeed.Wordbook.metainfo.xml.in`'s `<description>` feature list | the port's `po/POTFILES` extracts this file; upstream's `po/POTFILES` (`git show origin/main:po/POTFILES`) lists only three `.blp` and three `.py` files, never the metainfo. **Decision: keep marking**, per the "Rows 53–63" analysis below — this is upstream's own extraction bug, and the port's extraction + `msgfmt --xml` merge machinery already exists to benefit from a fix there |
+| `Fully offline` | same `<description>` list | same cause and decision |
+| `Pronunciations` | same `<description>` list | same cause and decision |
+| `Favorites` | same `<description>` list | same cause and decision |
+| `Double click to search` | same `<description>` list | same cause and decision |
+| `Dark mode` | same `<description>` list | same cause and decision |
+| `Dark Mode` | metainfo `<description>` list, and the About dialog's dark-mode toggle label | same cause and decision |
+| `Light Mode` | metainfo `<description>` list / About dialog toggle label | same cause and decision |
+| `Random Word` | metainfo `<description>` list, bare (no `msgctxt`) — a second, context-less key colliding in text with the existing `msgctxt "shortcut window"` `Random Word` upstream already has at row 48 | same cause; **decision: keep marking** the metainfo copy for the same reason, even though the collision means two keys now share rendered text under different contexts |
+| `dictionary;` | `data/dev.mufeed.Wordbook.desktop.in`'s `Keywords=` | the port's `po/POTFILES` extracts the desktop file; upstream's never does. **Decision: keep marking**, same reasoning — `msgfmt --desktop` already merges `Keywords[xx]=` the same way meson's `i18n.merge_file` would |
+| `History` | desktop/metainfo extraction, bare (no context) — collides in text with the existing bare `History` key at row 4 (`history_sidebar.rb`) | the desktop entry's `Name`/`Keywords` extraction produces a second occurrence of text upstream already has a key for; not a new concept, just a duplicate line from a different source file. **Decision: keep** — removing it would mean treating the desktop extraction specially for one string only |
+
+Eleven of these twelve (every one but `Ruby Port`) exist only because this
+port's `po/POTFILES` lists `data/dev.mufeed.Wordbook.{desktop,metainfo.xml}.in`
+and upstream's does not — see "Rows 53–63" below, which upstream owes the fix
+for. The alternative this round considered and rejected was to stop
+extracting those two files here, which would shrink `po/wordbook.pot` back to
+53 + 1 = 54 and make the port's key set a strict match for upstream's actual
+template; it was rejected because it would also silently drop the metainfo
+feature list and the desktop keywords back to permanently-English text with
+no mechanism to ever offer them to a translator, which is worse than an
+honestly-recorded 12-key divergence with the merge machinery already in
+place. If a future round disagrees, reverting `po/POTFILES` to drop the two
+`data/*.in` lines and re-running `rake gettext:pot:create` is the mechanical
+undo.
 
 `Did you mean: %s?` was a second added key and has been **removed**.
 `window.rb:391` marked it with `_()`, which looked like an improvement on
