@@ -1,15 +1,14 @@
 # Component identification — Wordbook-rb
 
-Audit round. Re-derived from `origin/main` and the current `ruby` tree, not
-carried forward from a prior report.
+Audit round. Re-derived from `origin/main` and the current `ruby` tree.
 
 | | |
 |---|---|
-| Upstream | `origin/main` @ `4b43165` |
-| Port | `ruby` @ `665cb58` (HEAD at audit start) |
+| Upstream | `origin/main` @ `4b43165` (unchanged since the last two audit rounds) |
+| Port | `ruby` @ `d3c3f60` (HEAD at audit start) |
 | Declarative UI upstream | 3 `.blp` files: `data/resources/ui/window.blp`, `settings-window.blp`, `shortcuts-dialog.blp` |
 | Upstream Python modules | `wordbook/{main,window,settings_window,search_completion,base,database,settings,utils,constants}.py` (+ `__init__.py`) |
-| `lib/wordbook/*.rb` files | **30** (`find lib -name '*.rb' \| wc -l`) |
+| `lib/wordbook/*.rb` files | **30** (`find lib -name '*.rb' | wc -l`, re-run this round, unchanged) |
 | Unit files (own a widget tree) | **11** |
 | Support files (backend, no widget) | 19 |
 
@@ -36,26 +35,27 @@ $ find lib -name '*.rb' | wc -l
 11. `error_dialog.rb`/`about_dialog.rb` ← `_new_error`/`on_about` in
     `window.py`/`main.py`
 
-This reconciles against `COMPONENT_IDENTIFICATION.md`'s own count
-(`15 unit-ish files + 15 support files = 30`, where that file splits
-`definition_view`'s cluster and `error_dialog`/`about_dialog` into separate
-rows) — the two groupings differ in how finely the cluster files are counted,
-not in what exists. Both land on 30 files under `lib/`, which is the number
-the runtime gate's "30 components" cites.
-
-## Non-widget (support) files — not UI components, scanned for completeness
-
-`base.rb`, `espeak.rb`, `database_manager.rb`, `database_builder.rb`,
-`lmf_reader.rb`, `lexicon_download.rb`, `settings.rb`, `utils.rb`,
-`constants.rb`, `style.rb`, `translations.rb`, `profile.rb`,
-`history_object.rb`, plus the gem-layout files (`wordbook.rb`,
-`rb/version.rb`). These have no widget tree and are out of scope for this
-report; they are covered by test-parity and the drive/suite instead.
+This still reconciles against `COMPONENT_IDENTIFICATION.md`'s own count
+(15 unit-ish files + 15 support files = 30) — a counting-granularity
+difference, not a missing-file difference. No new upstream file appeared on
+`origin/main` this round (its HEAD is still `4b43165`, confirmed by
+`git rev-parse origin/main`), so this report is a re-check, not a re-derive
+from a moved target.
 
 ## Nothing found missing on this axis
 
 No `.blp`/`.ui` file or Python module exists upstream with no port-side file
-named for it; no port-side `lib/wordbook/*.rb` file claims to port a unit this
-round's `git ls-tree -r --name-only origin/main` does not contain. The
-reconciliation above is the only item worth recording — it is a presentation
-difference between two documents, not a missing component.
+named for it; no port-side `lib/wordbook/*.rb` file claims to port a unit
+`git ls-tree -r --name-only origin/main` does not contain. Re-confirmed this
+round with the same commands as the prior audit; the finding is unchanged:
+**0 missing files on this axis.**
+
+## What this axis does not cover
+
+Component *identification* only asks "does a port-side file exist for every
+upstream file". It says nothing about whether each file's widgets, actions,
+strings or behaviour actually match — that is `component-parity.md`, and it
+is where this round's real findings live (translation-parity's 12 extra
+msgids; the search-provider driver's flakiness documented in
+`test-parity.md` and `accountability-ensurance.md`). A reader who stops here
+would wrongly conclude the port is fully verified; it is not.
