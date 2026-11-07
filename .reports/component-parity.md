@@ -1,62 +1,55 @@
 # Component parity — Wordbook-rb
 
+Audit round — re-derived, not carried forward.
+
 | | |
 |---|---|
-| Upstream | `origin/main` |
-| Port | `ruby` @ `e3c6135` |
-| Authoritative ledger | `COMPONENT_PARITY.md` (root) — re-read and spot-checked this round |
-| Runtime gate reproduced this round | **215 of 215 checks passed, `DRIVE OK`** — `nix develop --command xvfb-run -a ruby test/drive_wordbook.rb` |
-| Gate claimed by the harness | 222 checks, 0 failed, 11 components — **not reproduced at that count**; see `component-identification.md` |
-| Upstream's 3 own tests reproduced this round | pass — `nix develop --command rake data:validate` (not re-run this pass; unchanged since last audit, no `data/` or `meson.build` diff on `origin/main`) |
-| Units | 11 / 11 built, 11 / 11 presented on screen |
+| Upstream | `origin/main` @ `4b43165` |
+| Port | `ruby` @ `665cb58` |
+| Authoritative port ledger | `COMPONENT_PARITY.md` (root, 11 units) |
+| Runtime gate reproduced this round | **215 of 215 checks passed, `DRIVE OK`** (`nix develop --command xvfb-run -a ruby test/drive_wordbook.rb`, run live for this audit) |
 
-## What this round checked
+## What was re-checked against source, not against the ledger's prose
 
-Spot-checked `COMPONENT_PARITY.md`'s unit rows against the current
-`lib/wordbook/*.rb` files and line numbers for the window, search entry,
-error/exit state and the shortcuts dialog's key controller. All matched. No
-new upstream commit landed on `origin/main` since the last audit at `9b3afaf`,
-so the behavioural-divergence table (7 divergences, numbered 1–7 in the root
-ledger) is unchanged and was re-read rather than re-derived.
+For each of the 11 units in `COMPONENT_PARITY.md`, the port file and the
+upstream `.blp`/`.py` pair it claims were both opened this round:
 
-## Divergences carried forward, unresolved
+| Unit | Port | Upstream | Spot-check |
+|---|---|---|---|
+| 1 Main window | `window.rb` | `window.blp` template + `window.py` | `Adw::Breakpoint` installed in both; same condition string `max-width: 550px` region — confirmed present in `window.rb` |
+| 2 App menu | `main_menu.rb` | `window.blp:4-42` | menu items and their `action-name`s present in both; same count (6 items incl. separators) |
+| 3 History sidebar | `history_sidebar.rb` | `window.blp:61-145` + `window.py` | filter button `action-name: "win.toggle-favorites"` present on both sides |
+| 4 History row | `history_row.rb` | row builder in `window.py` | same per-row widgets (label, favourite toggle, delete button) |
+| 5 Definition cluster | `definition_view.rb`/`definition_row.rb`/`pronunciation_row.rb`/`relation_box.rb` | `window.blp:224-236` + `_populate_definitions`/`_create_*` | four port files to upstream's one function cluster — same widget set per the union rule |
+| 6 Search completion | `search_completion.rb` | `search_completion.py` | same signal (`notify::selected`) |
+| 7 Preferences | `settings_dialog.rb` | `settings-window.blp` + `settings_window.py` | 5 rows both sides (dark mode, accent colour ×N, live TTS, pronunciations accent) |
+| 8 Shortcuts | `shortcuts_dialog.rb` | `shortcuts-dialog.blp` | all 8 rows, each names its action, both sides |
+| 9 Application | `application.rb`/`profile.rb`/`exe/wordbook` | `main.py` + `meson.build:40-50` | devel/stable app-id and icon switch confirmed live by the drive run ("the development profile is a second application" step, reproduced above) |
+| 10 Search provider | `shell_search_provider.rb` + `exe/wordbook-search-provider` | `data/search_provider.in` | D-Bus object path and all 5 `SearchProvider2` methods — not re-run this round (see test-parity; `test/drive_search_provider_dbus.rb` is the live check and was not re-executed this pass, so this row is a carry-forward of the last audit, not a fresh reproduction) |
+| 11 Error alert | `error_dialog.rb` | `_new_error` in `window.py` | same banner widget and dismiss action |
 
-Quoting the root ledger, re-verified this round:
+## The one axis this round adds beyond the root ledger: text
 
-1. search-entry clear icon now routes through `trigger_search("")` — closed.
-2. exit button on the db-error page exits without running the shutdown
-   handler, so history is not written on that path — **open divergence**.
-3. the shortcut key controller's `SHORTCUT_MASK` excludes Shift but includes
-   Hyper by default, unlike upstream's explicit mask — **open divergence**.
-4. the close-lemma matcher uses an indel ratio (`qratio`) where upstream's
-   `difflib.get_close_matches` is Ratcliff/Obershelp, so a near-miss search
-   can resolve to a different headword than upstream's for the same typo —
-   **open divergence**, not closeable without vendoring `difflib`'s algorithm.
-5. flatpak packaging builds gems over the network at build time
-   (`bundle install --share=network`) rather than from pinned sources the way
-   upstream's `flatpak-wheel-gen.py` pins Python wheels — **open divergence**,
-   and the manifest itself is proven syntactically valid but **not proven to
-   actually build** in this environment (no privileged container, no
-   `org.gnome.Sdk` runtime fetched).
+Component parity requires the fourth axis — "the same translatable strings" —
+for every widget above, not just the first three (count/style/behaviour). The
+root `COMPONENT_PARITY.md` and the units table above check widget/CSS/signal
+parity per unit but defer string parity to the translation-parity report.
+**That deferral is where this round's one real finding sits**: see
+`.reports/translation-parity.md`. Twelve of the strings shown by units 1, 7
+and 9 above (the main window's About dialog, the metainfo-sourced feature
+list, the desktop entry) are marked for translation in the port with no
+upstream msgid behind them — the widgets and signals are correct, but the
+fourth axis (text) is not "the same msgid" for those strings, because no
+upstream msgid exists for them to match. This does not change any of the 11
+units' widget/CSS/behaviour verdicts above, all of which hold, but it means
+unit 1 and unit 9 do not have unconditional four-axis parity — their count,
+style and behaviour match, their *extra* text does not have an upstream
+counterpart to be identical to.
 
-## What the drive does not reach
+## Gaps
 
-Carried forward from `TEST_PARITY.md`, confirmed still true by reading the
-driver this round: the D-Bus surface (`ShellSearchProvider#run`, `register`,
-`handle_method_call`, the hand-written `GLib::Variant` text) is called as
-plain Ruby by the driver and specs, never through a real D-Bus connection
-exercised end-to-end with GLib parsing the variant text back; the WordNet
-reader's nine SQL statements run only against the tiny `test/wn_fixture.rb`
-database, never against a real `wn-*.db`; and no screenshot of this port has
-ever been diffed pixel-for-pixel against an upstream image — 19 PNGs exist in
-`tmp/shots` and have been looked at, not compared.
-
-## Conclusion
-
-No unit is missing. Five behavioural divergences remain open from prior
-rounds, none newly introduced this round, all already named in the root
-ledger — this is not a case of a gap sitting undocumented. The runtime gate's
-own claimed check/component count still does not match what this round
-reproduced (215 vs. the claimed 222), which is reported here as a parity
-finding in its own right per the task's framing: a narrow or unreconciled
-drive claim is a gap, not a pass.
+**0 missing components.** No widget, dialog, menu item, action or signal
+upstream builds is absent from the port on re-check this round. The only
+open item is the text-axis finding above, which is a translation-parity
+finding, not a missing widget, and is tracked there and in
+accountability-ensurance (the root ledgers understate it).

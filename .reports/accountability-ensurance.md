@@ -1,47 +1,82 @@
 # Accountability ensurance — Wordbook-rb
 
-| | |
-|---|---|
-| Port | `ruby` @ `e3c6135` |
-| Scanned | `lib/`, `exe/`, `.reports/*.md`, `PORTING.md` |
-| Patterns | `TODO`, `FIXME`, `not implemented`, `for now`, `in a future` |
+Audit round. Grep re-run live against `lib/`, `exe/`, `.reports/` and
+`PORTING.md`; findings cross-checked against source rather than accepted from
+the documents' own prose.
 
-## The scan, re-run this round
+## Grep sweep
 
 ```
-$ grep -rn 'TODO\|FIXME\|not implemented\|for now\|in a future' lib exe PORTING.md
-(no matches)
+$ grep -rn 'TODO\|FIXME\|not implemented\|for now\|in a future' lib exe PORTING.md .reports
 ```
+No hit in `lib/` or `exe/`. The only hits anywhere are inside
+`.reports/accountability-ensurance.md` itself — the pattern list and the
+sentence explaining that `FINDINGS.md` quotes a `NotImplementedError` message
+string that is deliberately distinguished from a real outstanding TODO. That
+distinction was re-checked this round: `FINDINGS.md` quotes
+`"NotImplementedError: TODO: in Ruby -> ..."` as the *text of an error Ruby
+itself raises for an unimplemented stdlib method the port hit and worked
+around*, not a marker the port left in its own code. Confirmed by reading the
+surrounding `FINDINGS.md` paragraph; it is not a disguised gap.
 
-No excuse pattern appears anywhere in the shipped code or in `PORTING.md`.
-`FINDINGS.md` quotes one `NotImplementedError: TODO: in Ruby -> ...` string,
-but it is a *literal Ruby binding exception message*, quoted as evidence of a
-binding defect, not an excuse written by the porting agent — correctly
-distinguished from a real "TODO" by the prior round and re-confirmed here by
-reading the surrounding paragraph.
+**Clean on the literal pattern sweep.** No excuse-language hit in port code.
 
-## Green claims checked against what actually executed this round
+## The real finding this round: a stale root ledger, not a hedge phrase
 
-This is the part of the skill that matters most and is where this round's
-work concentrated, rather than re-running the grep alone:
+The patterns above catch hedge *words*. They do not catch a document that
+states a number that used to be true and is not anymore, with no hedge word
+anywhere in the sentence — which is a more dangerous failure mode than a
+"TODO", because it reads as a verified fact.
 
-| Claim | Backed by an execution this round? |
-|---|---|
-| "160 examples, 0 failures" | **yes** — `nix develop --command xvfb-run -a rspec -O /dev/null -Ilib spec` re-run, exit 0, log read in full |
-| "215 of 215 checks passed, DRIVE OK" | **yes** — `nix develop --command xvfb-run -a ruby test/drive_wordbook.rb` re-run, log read in full |
-| "222 checks passed... 11 components" (this round's stated runtime gate) | **no** — not reproduced; the actual re-run gives 215, not 222. This is flagged in `component-identification.md` and `component-parity.md` and is **the most important finding in this audit**: a gate number that does not reproduce from the checkout it describes is a false-green risk by definition, whether or not the underlying app is healthy. It is reported here rather than quietly reconciled, because reconciling it would require guessing which of the harness's checks were run under different conditions (e.g. counting steps instead of assertions, or a different environment with network access), and a guess is not a verification. |
-| "every upstream msgid survived" | **yes** — `comm -23` re-run this round against `origin/main`'s actual `.pot`, empty diff |
-| "upstream's 3 tests ported" | **not re-run this round** — carried forward from the prior audit, since `origin/main`'s `data/` tree has not moved; flagged as a carry-forward in `test-parity.md`, not hidden |
-| "per-language msgfmt statistics (780 strings / 15 languages)" | **not re-run this round** — carried forward, flagged in `translation-parity.md` |
-| flatpak manifest "builds" | **no** — `component-parity.md` and the root `COMPONENT_PARITY.md` both already say this is proven syntactically valid JSON, not proven to build (no privileged container, no `org.gnome.Sdk` fetched in this environment). Correctly labeled as unproven in the source documents, not claimed as green. |
-| D-Bus search-provider surface, real WordNet-query behaviour, search-threading timers | **no check, this round or any prior one, exercises these** — correctly labeled "not covered" in `TEST_PARITY.md` and re-confirmed by reading the driver and spec files directly. This is the kind of gap the skill exists to catch: it is accurately disclosed in the existing docs, so it is not a false green, but it is still an open, real gap and is carried into this round's `test-parity.md` and `component-parity.md` rather than dropped.
+`PORTING.md`'s header table says:
 
-## Conclusion
+> Open gaps | **1 component, 0 test, 1 translation**
 
-No excuse language was found in code or docs. The one real accountability
-finding this round surfaces is the unreconciled runtime-gate count (222
-claimed vs. 215 reproduced) — every other claim checked either reproduced
-cleanly or was explicitly marked as a carry-forward rather than silently
-re-asserted. A claim that does not reproduce is reported as a gap here, not
-smoothed over, per the task's framing that a false green is the most serious
-finding this audit can make.
+and its "Translation gaps (1)" section names only `"Ruby Port"`. The root
+`TRANSLATION_PARITY.md` repeats "Extra | **1**". Both are wrong **right now**:
+re-deriving the key-set diff directly against `origin/main` this round (see
+`.reports/translation-parity.md`) finds **12** port-only msgids, not 1. The
+previous round's own `.reports/translation-parity.md` had already found and
+written down the 12 — correctly, with the `comm` command and its output
+shown — but that finding was never carried into `PORTING.md` or
+`TRANSLATION_PARITY.md`, both of which still say 1 after `665cb58` ("Parity
+reports", the commit that last touched `.reports/translation-parity.md`) was
+already on the branch.
+
+This matters more than a `TODO` would, for the reason this skill exists: the
+next agent to work this port reads `PORTING.md` first — the file's own header
+says so ("Resume point for the next run") — and `PORTING.md` told it the
+translation gap was closed down to one deliberate, documented exception. It
+is not. A reader who trusted the header and moved on would have inherited an
+11-string undercount as settled fact, exactly the console-rb failure mode
+this skill's own description cites, just with numbers instead of a "Dropped
+deliberately" heading.
+
+Also minor, same shape: root `TEST_PARITY.md` states the driver as "210
+checks, all passing"; this round's live run (and the preceding round's
+`.reports/test-parity.md`) both show 215. Lower stakes than the translation
+figure — it understates the port's own verified strength rather than
+overstating completeness against upstream — but it is the same pattern: a
+root document not re-synced with the `.reports/` figure that superseded it.
+
+## Nothing else found excused
+
+- No "dropped deliberately", "out of scope", "by design", "simplified", or
+  "n/a" sentence found anywhere in `PORTING.md`, `FINDINGS.md`, `README.md`,
+  or in `lib/`/`exe/` comments on this pass (`grep -in 'deliberately\|out of scope\|by design\|n/a\b'` over those files returns nothing in `lib/`/`exe/`; `PORTING.md`'s own uses of "deliberately" are about the kept `"Ruby Port"` extra key, which is disclosed with its exact site and reason, not a hedge for unbuilt work).
+- The one component gap `PORTING.md` does list (no pre-built dictionary
+  shipped) is upstream's own behaviour too (`meson_options.txt`'s
+  `install_wn_db` defaults off) and is backed this round by the drive run
+  actually hitting "No compressed database found" in both the rspec run and
+  the live driver's logs — a real, observed absence, not an assertion.
+- The suite and driver are not "never executed" claims resting on an old log:
+  both were re-run live this session (see `.reports/test-parity.md`) and
+  produced the exact figures now cited.
+
+## Verdict
+
+**Not clean.** One concrete false-green: the root ledger's translation-gap
+count (1) is superseded by the port's own most recent, correctly-run audit
+(12), and the root ledger was never corrected to match. This is the kind of
+gap this skill exists to name — not missing code, but a settled-sounding
+number that stopped being true and nobody went back to fix.

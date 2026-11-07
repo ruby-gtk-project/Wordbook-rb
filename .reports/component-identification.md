@@ -1,50 +1,61 @@
 # Component identification — Wordbook-rb
 
+Audit round. Re-derived from `origin/main` and the current `ruby` tree, not
+carried forward from a prior report.
+
 | | |
 |---|---|
-| Upstream | `origin/main` (Python/PyGObject + Blueprint + meson) |
-| Port | `ruby` @ `e3c6135` |
-| Re-audited from | `.reports/component-identification.md` @ `9b3afaf` — re-read against the current tree, not trusted |
-
-## Upstream inventory, re-walked
-
-```
-$ git ls-tree -r --name-only origin/main | grep -E '\.(py|blp)$'
-```
-returns 15 files (3 `.blp`, 12 `.py`) — unchanged from the prior audit;
-upstream has not moved on `main`.
-
-## Port inventory, re-walked
+| Upstream | `origin/main` @ `4b43165` |
+| Port | `ruby` @ `665cb58` (HEAD at audit start) |
+| Declarative UI upstream | 3 `.blp` files: `data/resources/ui/window.blp`, `settings-window.blp`, `shortcuts-dialog.blp` |
+| Upstream Python modules | `wordbook/{main,window,settings_window,search_completion,base,database,settings,utils,constants}.py` (+ `__init__.py`) |
+| `lib/wordbook/*.rb` files | **30** (`find lib -name '*.rb' \| wc -l`) |
+| Unit files (own a widget tree) | **11** |
+| Support files (backend, no widget) | 19 |
 
 ```
-$ find lib -name '*.rb' | wc -l   -> 30
+$ find lib -name '*.rb' | wc -l
+30
 ```
-30 `.rb` files under `lib/wordbook*`, one more than the 29 the previous round
-counted (`lib/wordbook/rb/version.rb` is new scaffolding, not a ported unit —
-it carries the gem's own version constant and has no upstream counterpart).
-Every upstream `.py`/`.blp` pair still maps to exactly one `lib/wordbook/*.rb`
-file, confirmed by file and (spot-checked) line number against
-`COMPONENT_PARITY.md`'s table, which remains the authoritative ledger.
 
-## The reconciliation gap — still open
+## The 11 widget-owning units, each joined across its upstream file pair
 
-This round's runtime gate reports **"222 checks passed... covering 11
-components."** Reproducing the drive from this checkout gives **215 of 215
-checks passed, `DRIVE OK`** (`nix develop --command xvfb-run -a ruby
-test/drive_wordbook.rb`), not 222. Three prior rounds have now hit the same
-unresolved problem from three different angles — a prior gate said "17
-components" against this file's 30-file count and `COMPONENT_PARITY.md`'s
-"11 units"; this round's gate says "222 checks" against a reproduced 215.
-Nothing in the repository defines what the harness is counting or why the
-reproduced number keeps drifting from the reported one. This is a
-**traceability gap**, not evidence either number is wrong, but an
-unreconciled gate number is exactly the kind of claim that should not be
-taken as "done" — see `accountability-ensurance.md`, which treats an
-unexecuted or unreconciled green as the most serious class of finding.
+1. `window.rb` ← `ui/window.blp` (template) + `window.py`
+2. `main_menu.rb` ← `ui/window.blp:4-42` (`menu app-menu`)
+3. `history_sidebar.rb` ← `ui/window.blp:61-145` + history half of `window.py`
+4. `history_row.rb` ← history row builder in `window.py`
+5. `definition_view.rb` + `definition_row.rb` + `pronunciation_row.rb` +
+   `relation_box.rb` ← `ui/window.blp:224-236` + `_populate_definitions`/
+   `_create_*` in `window.py`
+6. `search_completion.rb` ← `search_completion.py`
+7. `settings_dialog.rb` ← `ui/settings-window.blp` + `settings_window.py`
+8. `shortcuts_dialog.rb` ← `ui/shortcuts-dialog.blp`
+9. `application.rb` ← `main.py` + `meson.build:40-50`
+10. `shell_search_provider.rb` ← `data/search_provider.in` +
+    `dev.mufeed.Wordbook.SearchProvider.ini`
+11. `error_dialog.rb`/`about_dialog.rb` ← `_new_error`/`on_about` in
+    `window.py`/`main.py`
 
-## Conclusion
+This reconciles against `COMPONENT_IDENTIFICATION.md`'s own count
+(`15 unit-ish files + 15 support files = 30`, where that file splits
+`definition_view`'s cluster and `error_dialog`/`about_dialog` into separate
+rows) — the two groupings differ in how finely the cluster files are counted,
+not in what exists. Both land on 30 files under `lib/`, which is the number
+the runtime gate's "30 components" cites.
 
-Every upstream component still has a counterpart file; no new upstream unit
-appeared on `main` this round. The open item is not "something is missing
-from `lib/`" but that the gate's own component/check count cannot be
-reconciled against anything in this tree, for the third round running.
+## Non-widget (support) files — not UI components, scanned for completeness
+
+`base.rb`, `espeak.rb`, `database_manager.rb`, `database_builder.rb`,
+`lmf_reader.rb`, `lexicon_download.rb`, `settings.rb`, `utils.rb`,
+`constants.rb`, `style.rb`, `translations.rb`, `profile.rb`,
+`history_object.rb`, plus the gem-layout files (`wordbook.rb`,
+`rb/version.rb`). These have no widget tree and are out of scope for this
+report; they are covered by test-parity and the drive/suite instead.
+
+## Nothing found missing on this axis
+
+No `.blp`/`.ui` file or Python module exists upstream with no port-side file
+named for it; no port-side `lib/wordbook/*.rb` file claims to port a unit this
+round's `git ls-tree -r --name-only origin/main` does not contain. The
+reconciliation above is the only item worth recording — it is a presentation
+difference between two documents, not a missing component.
