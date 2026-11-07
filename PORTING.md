@@ -21,10 +21,10 @@ alive after it has been closed.
 | Units mapped | 11 / 11 |
 | Units exercised on screen | **11 / 11** |
 | `lib/` line coverage under the drive | 89.9 % (1833 / 2038), all 26 files entered |
-| The port's own suite | **133 examples, 0 failures**, executed |
-| The driver | **`test/drive_wordbook.rb`**, **210 checks, 0 failures**, 19 screenshots into `tmp/shots` |
+| The port's own suite | **160 examples, 0 failures**, executed |
+| The driver | **`test/drive_wordbook.rb`**, **215 checks, 0 failures**, 19 screenshots into `tmp/shots` |
 | Upstream tests ported | **3 / 3** (`rake data:validate` and `nix flake check`) |
-| Open gaps | **8 component, 0 test, 1 translation** |
+| Open gaps | **1 component, 0 test, 1 translation** |
 
 ## Upstream
 
@@ -84,9 +84,9 @@ byte for byte, including the nine `msgctxt "shortcut window"` keys and the
 mnemonic underscores; all 15 `.po` files are byte-identical and compiled
 (`.reports/translation-parity.md`).
 
-The port's own suite is 133 examples across 7 spec files, **all executed**:
+The port's own suite is 160 examples across 9 spec files, **all executed**:
 `nix develop --command xvfb-run -a rspec -O /dev/null -Ilib spec` reports
-133 examples, 0 failures. `-O /dev/null` is needed because `.rspec` loads
+160 examples, 0 failures. `-O /dev/null` is needed because `.rspec` loads
 `spec/spec_helper.rb`, which requires `kettle-test` — the project's CI bundle,
 not in `nix/Gemfile` and not installable offline.
 
@@ -98,55 +98,87 @@ behaviour is not.
 
 | What the user does not get | Upstream |
 |---|---|
-| **A way to install it.** Most users install upstream from a flatpak; there is no manifest here and no CI job producing an installable artifact, only `nix build` | `build-aux/flatpak/dev.mufeed.Wordbook.Devel.json` + `scripts/flatpak-wheel-gen.py` |
-| **Pictures of this program in GNOME Software.** `data/dev.mufeed.Wordbook.metainfo.xml.in:40,44` still points at `raw.githubusercontent.com/mufeedali/Wordbook/main/screenshots/*.png`, so Software shows a user screenshots of a different program. Nineteen usable PNGs of this one sit in `tmp/shots` | `screenshots/light.png`, `screenshots/dark.png` |
-| **A third build profile.** `profile=source` installs `dev.mufeed.Wordbook.Source.svg`; the port has `development` and stable only, so that icon is installed by nothing | `meson_options.txt` `profile=source` |
+| **A pre-built dictionary.** `rake wn:db` builds and `rake install:data`/`nix build` install `wn-<version>.db.zst` when one has been built, exactly as upstream's `-Dinstall_wn_db` does, but neither this tree nor a release of it carries one — it is a 60 MB build product on both sides, `.gitignore`d here (`/data/wn-*.db.zst`) the same way it is untracked upstream. **Run for real this round**: `rake wn:db` downloaded the real 2025 lexicon and `DatabaseBuilder` wrote a 73.9 MB database (161,875 entries) compressed to 23.6 MB, and the full app path — `DatabaseManager.setup` through `Base.get_definition` — read a real definition and IPA back out of it. See "Open gaps" below | `scripts/generate-wn-db.py` + `data/meson.build`'s `install_wn_db` option |
 | nothing — the Python `wn` library is vendored upstream, and both halves of what the app needs from it are reimplemented here: reading its SQLite schema (`lib/wordbook/base.rb:159`) and writing it from the WN-LMF lexicon (`lib/wordbook/database_builder.rb`) | `subprojects/wn` |
 | nothing — the port has no `.blp` files and the widget trees are reproduced in Ruby | `subprojects/blueprint-compiler.wrap` |
 
 ## Open gaps
 
-Measured against this round's reports: **8 component gaps, 0 test gaps, 1
-translation gap**. Gaps 1, 2 and 4 of the previous list — the two title bars,
-the breakpoint that never fired, and the shortcuts rows with no `action-name` —
-are **closed**, and so is the `FINDINGS.md` citation that was used as authority
-for the first of them; this file carried instructions to tear it out of three
-sites that no longer contain it.
+Measured against this round's own re-check of every gap this file has ever
+listed, against the files and commands each one names: **1 component gap, 0
+test gaps, 1 translation gap**. An older round's intro paragraph used to live
+here reciting which of a previous list's 8 gaps had closed; the list itself
+had moved on to a different 8 since, with most of those closed too and still
+reported open, so the paragraph is gone rather than extended again — the gap
+list below is now the only place a gap's state is recorded, checked against
+source this round rather than carried forward from the last report that
+mentioned it.
 
-**Component gaps (8).**
+**Component gaps (1).** This section listed 8 for several rounds; this round
+re-checked each one against the files it names, not against the sentence
+describing it, and 7 were already closed — some since several rounds back —
+while the ledger kept reporting them open, which is exactly the staleness this
+file's own header warns about. Corrected below, with what closed each one and
+where that is recorded.
 
-1. **No dictionary.** Nothing builds or installs `wn-<version>.db.zst`. Every
-   search on a fresh install lands on "Database not found". This is the one
-   gap that makes the app useless rather than incomplete.
-2. **No flatpak**, which is how most users install upstream, and no CI job
-   that produces an installable artifact.
-3. **The metainfo shows upstream's screenshots.** Pictures of a different
-   program in GNOME Software.
-4. **`DatabaseManager` shells out to the `zstd` program** where upstream uses a
-   Python module (`FINDINGS.md` 4). Needs `ruby-zstds` or `zstd-ruby` in the
-   bundle.
-5. **The archive path has never been run by the app.** `extract_database`,
-   `decompress`, `cleanup_old_versions`, `old_version_dirs` and the success
-   branch of `find_compressed_db` are covered by
-   `spec/wordbook/database_manager_spec.rb` but entered by no run of the real
-   application, because the drive writes `test/wn_fixture.rb`'s database
-   straight into place. Closes with gap 1.
-6. **The search provider's D-Bus surface has never been run.** `run`,
-   `register`, `handle_method_call`, `activate_result`'s `Process.spawn` and
-   the `GLib::Variant` builders are entered by no check: the drive calls the
-   five SearchProvider2 methods as plain Ruby, so the hand-written GVariant
-   text has never been parsed by GLib — exactly what `FINDINGS.md` 8 and 9 say
-   the bindings mishandle. Needs the provider driven over a
-   `dbus-run-session` through `Gio::DBusProxy`.
-7. **The settings dialog's five preference rows and the completion popover's
-   geometry are built and undriven.** No driver checkpoint covers them.
-8. **A user cannot run the `source` profile**, so the Source icon that would
-   tell them they are running a build straight out of a checkout never appears
-   and `data/icons/dev.mufeed.Wordbook.Source.svg` is installed by nothing. I
-   built two profiles out of upstream's three because I am an idiot who stopped
-   when the devel one worked. Upstream: `meson_options.txt` `profile`,
-   `meson.build:43-49`. Port: `lib/wordbook/profile.rb` knows `development` and
-   stable.
+1. **No dictionary ships pre-built**, so a fresh install with no WordNet
+   archive placed next to it lands every search on "Database not found".
+   This is not a defect: upstream does not ship one either —
+   `meson_options.txt`'s `install_wn_db` is a meson option, off by default,
+   and `data/meson.build:4-16`'s `custom_target` only builds one when a build
+   asks for it. The port's equivalent is `rake wn:db`, run once per install
+   the same way upstream's custom target runs once per configured build.
+   **Run for real this round**, not just against the spec suite's four-entry
+   fixture: `nix develop --command rake wn:db` downloaded
+   `english-wordnet-2025-plus.xml.gz` from the real GitHub release URL and
+   `DatabaseBuilder` wrote a 73.9 MB SQLite database (161,875 entries, 212,659
+   senses, 120,564 synsets) compressed to 23.6 MB. Then, with
+   `MESON_BUILD_ROOT=.` so `DatabaseManager.candidates` found it under
+   `data/`, the full real path ran end to end with no fixture involved:
+   `DatabaseManager.needs_extraction?` → `.setup` → `extract_database` →
+   `Zstd::StreamingDecompress` → `Base.wordnet` → `Base.get_definition
+   ("serendipity", wn)`, which returned the real definition
+   ("good luck in making unexpected and fortunate discoveries") and IPA
+   (`ˌsɛ.ɹən.ˈdɪ.pɪ.ti`) read out of the real database. This is what gap 5
+   below used to ask for; it closes with this entry, not separately. The
+   23.6 MB archive and the extracted copy under `~/.local/share/wordbook` are
+   build/runtime products, correctly `.gitignore`d (`/data/wn-*.db.zst`), and
+   were deleted after the check rather than committed — a user or a packager
+   runs `rake wn:db` themselves, the same as upstream's build asks a packager
+   to run `meson configure -Dinstall_wn_db=true`.
+
+Closed, found already done this round, with where that is recorded:
+
+- **No flatpak** — closed: `build-aux/flatpak/dev.mufeed.Wordbook.Devel.json`
+  and `.github/workflows/ci.yml`'s `flatpak-builder` job both exist and build
+  on every push. `COMPONENT_PARITY.md`'s "Files with nothing opposite them"
+  table.
+- **The metainfo shows upstream's screenshots** — closed:
+  `data/dev.mufeed.Wordbook.metainfo.xml.in`'s four `<image>` tags point at
+  `raw.githubusercontent.com/ruby-gtk-project/Wordbook-rb/ruby/screenshots/*`,
+  this port's own committed PNGs, read directly out of the file this round.
+- **`DatabaseManager` shells out to `zstd`** — closed: `zstd-ruby`,
+  `FINDINGS.md` 4, read directly out of `lib/wordbook/database_manager.rb`
+  this round, which has no `Process.spawn` or backtick call in it.
+- **The archive path has never been run by the app** — closed this round,
+  for real, not by assertion: see gap 1 above.
+- **The search provider's D-Bus surface has never been run** — closed:
+  `test/drive_search_provider_dbus.rb` calls all five `SearchProvider2`
+  methods over a private session bus with `gdbus call`, a real client over a
+  real socket. `COMPONENT_PARITY.md` Unit 10, `FINDINGS.md` 17.
+- **The settings dialog's rows and the completion popover's geometry are
+  undriven** — closed: `test/drive_wordbook.rb`'s "the preferences dialog
+  opens" through "flipping the switches writes the settings" steps drive all
+  five rows, and "the completion popover lists the wordlist's matches" reads
+  `pointing_to` off the popover.
+- **A user cannot run the `source` profile** — struck, not closed: there is
+  no `source` profile. Checked against `origin/main` this round —
+  `meson_options.txt`'s `profile` option has exactly two choices, `default`
+  and `development`; `data/icons/meson.build` installs only
+  `application_id + '.svg'`, which is one or the other. Upstream never
+  installs `dev.mufeed.Wordbook.Source.svg` either; nothing in its build
+  references the file by name. The port's two profiles
+  (`lib/wordbook/profile.rb`) already match upstream's two exactly.
 
 **Test gaps (0).** All three of upstream's `data/meson.build` tests are ported:
 `rake data:validate` runs `desktop-file-validate`, `appstreamcli validate
@@ -169,8 +201,7 @@ here but not upstream (`base.rb:425` vs `base.py:266`); close-lemma match uses
 an indel ratio, not difflib's Ratcliff/Obershelp at cutoff 0.8
 (`base.rb:445`); suggestion ties break alphabetically, not by wordlist order
 (`base.rb:488`); `app.shortcuts` exists here with an accelerator and upstream
-has neither; state saved on `close-request` as well as `shutdown`; `zstd` is an
-external program here and a Python module upstream (gap 4).
+has neither; state saved on `close-request` as well as `shutdown`.
 
 ## Blockers
 
@@ -261,15 +292,17 @@ rake install:data               # desktop entry, metainfo, icons, schema, search
 xvfb-run -a ruby exe/wordbook                                  # the app
 WORDBOOK_PROFILE=development xvfb-run -a ruby exe/wordbook      # the devel copy
 xvfb-run -a ruby test/drive_wordbook.rb                        # drive it
-xvfb-run -a rspec -O /dev/null -Ilib spec                      # 133 examples
+xvfb-run -a rspec -O /dev/null -Ilib spec                      # 160 examples
 nix build                       # the packaged app, data, schema and catalogues
 nix build .#devel               # the Devel copy, side-installable
 nix flake check                 # the data validators + the packaged database read
 ```
 
-The port needs upstream's `wn-<version>.db.zst` installed in an XDG data
-directory to search anything at all, and it does not build one (component gap
-1). The `nix build` output carries `sqlite3` now.
+The port needs a `wn-<version>.db.zst` installed in an XDG data directory to
+search anything at all, and neither this tree nor `nix build`'s default
+output carries one — `rake wn:db` has to be run first, which is component gap
+1 below, and is exactly what `-Dinstall_wn_db` asks a packager to do upstream.
+The `nix build` output carries `sqlite3` now.
 
 ## Where the ledgers are
 
