@@ -477,6 +477,24 @@ GtkDriver.drive(APP, shots: SHOTS, interval: 500, timeout: 420) do |d, app|
              .map(&:text) == %w[word wordbook]
       end
       d.check("the entry is marked active") { window.call.search_entry.css_classes.include?("completion-active") }
+      # The popover's rendered position, checked against the entry it is
+      # supposed to hang off: sync_geometry (search_completion.rb) points it
+      # at the entry's own compute_bounds in the window's coordinate space,
+      # so the two should agree independently measured, not just by reading
+      # the same source line twice.
+      entry_bounds = window.call.search_entry.compute_bounds(win.call).then do |result|
+        result.is_a?(Array) ? result.last : result
+      end
+      pointing_to = completion.popover.pointing_to
+      d.check("the popover's x matches the entry's own measured bounds") do
+        pointing_to.x == entry_bounds.x.round
+      end
+      d.check("the popover sits on the entry's bottom edge") do
+        pointing_to.y == (entry_bounds.y + entry_bounds.height).round - 1
+      end
+      d.check("the popover is at least as wide as the entry") do
+        pointing_to.width >= window.call.search_entry.width
+      end
       # A popover is its own surface, so the window's snapshot never holds it;
       # it is shot as the widget it is.
       d.shot("10-completion", completion.popover)
@@ -779,6 +797,34 @@ GtkDriver.drive(APP, shots: SHOTS, interval: 500, timeout: 420) do |d, app|
   d.step("the breakpoint fired") do
     d.check("the split view collapsed") { window.call.split_view.collapsed? }
     d.shot("17-narrow")
+    win.call.set_default_size(900, 640)
+  end
+
+  d.step("the window refuses to shrink below the declared minimum") do
+    win.call.set_default_size(100, 600)
+  end
+
+  d.step("the floor held") do
+    # Wordbook::Window::MIN_WIDTH is the 360px set_size_request floor
+    # (window.rb). A prior round observed a width warning without this
+    # pinned down. Measured: `set_default_size(100, 600)` does not shrink the
+    # window to 100px — it clamps — but the clamp lands at 350px, not 360px.
+    # Reproduced on a bare `Adwaita::ApplicationWindow` with the same
+    # `set_size_request(360, 280)` and nothing else in it: this is
+    # libadwaita's own ~10px CSD resize-border reservation (`size_request`
+    # applies to the surface including that border; `width` measures the
+    # content inside it), not something this port's code does — the same
+    # gap would show up measuring upstream's own window the same way. The
+    # check below is for the floor holding at all, not for the exact pixel
+    # offset, which is libadwaita's to define.
+    narrow_width = win.call.width
+    d.check("360px asked for landed within 15px of it (got #{narrow_width})") do
+      (Wordbook::Window::MIN_WIDTH - narrow_width).abs <= 15
+    end
+    win.call.set_default_size(50, 600)
+    d.check("asking for even less does not shrink it further (still #{win.call.width})") do
+      win.call.width == narrow_width
+    end
     win.call.set_default_size(900, 640)
   end
 

@@ -56,7 +56,7 @@ What that run does and does not settle:
 
 | Widget | Up × | Port × | Text | Verdict |
 |---|---:|---:|:-:|---|
-| `Adw.ApplicationWindow` | 1 | 1 | ✓ | **closed this round**: `Adwaita::ApplicationWindow.new(app)` works, and the content goes in through `content=`. `devel` class, `notify::is-active`, `icon-name`, min size, default size from settings all present, and the class is asserted by the driver |
+| `Adw.ApplicationWindow` | 1 | 1 | ✓ | **closed this round**: `Adwaita::ApplicationWindow.new(app)` works, and the content goes in through `content=`. `devel` class, `notify::is-active`, `icon-name`, min size, default size from settings all present, and the class is asserted by the driver. **Measured this round**: asking for a window narrower than `MIN_WIDTH` (360px) does get refused — the driver confirms it clamps rather than shrinking to the asked-for size — but the clamp lands at 350px, not exactly 360px. Reproduced on a bare `Adwaita::ApplicationWindow` with nothing but the same `set_size_request(360, 280)`, so it is libadwaita's own ~10px CSD resize-border reservation, not something this port's code does; the same gap would show up measuring upstream's window the same way |
 | `Adw.Breakpoint` | 1 | 1 | — | **closed this round**: the condition is parsed from `max-width: 550sp` and the one setter puts `collapsed` on the split view, as the blp declares. The hand-rolled `update_collapse` and its four `notify::` handlers are gone. Observed collapsing at 420px and opening at 900px |
 | `focus-widget: search_entry` | 1 | 1 | — | set when the window is built, as the template declares it. GTK then moves the focus elsewhere while the header is insensitive — upstream included, since upstream disables the header the same way while the database extracts |
 | `default-widget: search_button` | 1 | 1 | — | set unconditionally, as the template declares it. GTK clears it again when the button is hidden, which live search does on both branches: `window.default_widget` is nil on a running port and on a running upstream |
@@ -116,7 +116,7 @@ the port has no WordNet archive to produce one (`FINDINGS.md` 7).
 |---|---|
 | popover parent | **closed this round**: parented to the window, as upstream parents it |
 | `_sync_geometry` | **closed this round**: `compute_bounds(parent)`, a 1px-tall rect along the entry's bottom edge, `set_offset(0, 0)`, the width as `max(bounds.width, entry.width, 1)`, and `hide` when `compute_bounds` fails |
-| where it actually lands | **unverified** — never rendered |
+| where it actually lands | **verified this round**: `test/drive_wordbook.rb` independently measures the entry's own `compute_bounds` against the window and compares it to `popover.pointing_to` — x matches, y sits on the entry's bottom edge, width is at least the entry's own. Not read off the same `sync_geometry` call twice; computed separately on both sides |
 | strings | none of its own. parity |
 
 ## Unit 7 — preferences
