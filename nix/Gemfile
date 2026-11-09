@@ -11,28 +11,5 @@ source "https://rubygems.org"
 gem "adwaita"
 gem "gettext"
 gem "gtk4"
-# The WordNet database lib/wordbook/base.rb reads. Without it in THIS bundle —
-# not just in the devShell — the packaged app raises
-# `LoadError: cannot load such file -- sqlite3` on the first search.
-# force_ruby_platform: the precompiled -x86_64-linux-gnu gem would drop the
-# `ruby` platform from the lockfile and ship its own libsqlite3; bundlerEnv
-# builds the C extension against nixpkgs' sqlite instead.
-gem "sqlite3", force_ruby_platform: true
-
-# The WordNet archive lib/wordbook/database_manager.rb unpacks. There is no
-# zstd in Ruby's standard library; this binds libzstd directly (it vendors
-# the C sources, so it needs no system libzstd) in place of shelling out to
-# the `zstd` program. (`FINDINGS.md` 4.)
+gem "sqlite3"
 gem "zstd-ruby"
-
-# The port's own spec suite, used by the devShell only. `groups` in flake.nix
-# keeps it out of the packaged app's gem closure — but bundlerEnv still writes
-# the whole lockfile beside the installed gems, so the packaged launcher's
-# `-rbundler/setup` went looking for rspec, did not find it, and the app died
-# with Bundler::GemNotFound before `require "wordbook"` in any environment
-# without a BUNDLE_* override already set. The launcher's wrapper therefore
-# sets BUNDLE_WITHOUT=test, which is the half of `groups` that bundlerEnv does
-# not write for you.
-group :test do
-  gem "rspec"
-end

@@ -1,17 +1,24 @@
 name: CI
 
+permissions:
+  contents: read
+
 on:
   push:
     branches: [ruby]
   pull_request:
     branches: [ruby]
 
+concurrency:
+  group: "${{ github.workflow }}-${{ github.ref }}"
+  cancel-in-progress: true
+
 jobs:
   validate-data:
     name: Validate desktop/appstream/schema data
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - uses: cachix/install-nix-action@v27
         with:
           extra_nix_config: |
@@ -23,7 +30,7 @@ jobs:
     name: Run the rspec suite
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - uses: cachix/install-nix-action@v27
         with:
           extra_nix_config: |
@@ -37,7 +44,7 @@ jobs:
     name: Drive the app end to end
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - uses: cachix/install-nix-action@v27
         with:
           extra_nix_config: |
@@ -46,7 +53,7 @@ jobs:
         run: nix develop --command xvfb-run -a ruby test/drive_wordbook.rb
       - name: Upload screenshots
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: drive-screenshots
           path: tmp/shots/*.png
@@ -61,7 +68,7 @@ jobs:
       image: bilelmoussaoui/flatpak-github-actions:gnome-nightly
       options: --privileged
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - uses: flatpak/flatpak-github-actions/flatpak-builder@v6
         with:
           bundle: "wordbook-rb-devel.flatpak"

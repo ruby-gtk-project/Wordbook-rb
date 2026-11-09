@@ -65,6 +65,3 @@ group :development do
   gem "rubocop"
 end
 
-# gtk4, adwaita, sqlite3 and gettext are runtime dependencies and are declared
-# in wordbook-rb.gemspec, which `gemspec` above pulls in. Listing them here as
-# well would declare them twice.

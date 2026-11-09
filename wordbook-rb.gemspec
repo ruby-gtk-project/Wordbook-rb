@@ -101,9 +101,6 @@ Gem::Specification.new do |spec|
   spec.executables = ["wordbook", "wordbook-generate-db", "wordbook-search-provider"]
   spec.require_paths = ["lib"]
 
-  # Runtime dependencies. Without these `gem install wordbook-rb` installs an
-  # app that raises LoadError on `require "gtk4"` at
-  # lib/wordbook/application.rb:3.
   spec.add_dependency("adwaita", "~> 4.3")                                          # libadwaita widgets
   spec.add_dependency("gettext", "~> 3.5")                                          # upstream's message catalogue
   spec.add_dependency("gtk4", "~> 4.3")                                             # the toolkit

@@ -13,7 +13,6 @@ GEM
     cairo-gobject (4.3.9)
       cairo (>= 1.16.2)
       glib2 (= 4.3.9)
-    diff-lcs (1.6.2)
     erubi (1.13.1)
     fiddle (1.1.8)
     forwardable (1.4.0)
@@ -65,19 +64,6 @@ GEM
     red-colors (0.5.0)
       json
       matrix
-    rspec (3.13.2)
-      rspec-core (~> 3.13.0)
-      rspec-expectations (~> 3.13.0)
-      rspec-mocks (~> 3.13.0)
-    rspec-core (3.13.6)
-      rspec-support (~> 3.13.0)
-    rspec-expectations (3.13.5)
-      diff-lcs (>= 1.2.0, < 2.0)
-      rspec-support (~> 3.13.0)
-    rspec-mocks (3.13.8)
-      diff-lcs (>= 1.2.0, < 2.0)
-      rspec-support (~> 3.13.0)
-    rspec-support (3.13.7)
     singleton (0.3.0)
     sqlite3 (2.10.2)
       mini_portile2 (~> 2.8.0)
@@ -92,9 +78,8 @@ DEPENDENCIES
   adwaita
   gettext
   gtk4
-  rspec
   sqlite3
   zstd-ruby
 
 BUNDLED WITH
-   2.7.2
+   2.6.9
